@@ -1,11 +1,12 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=12';
-import { buildOrchestra } from './orchestra.js?v=12';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=12';
-import { createPresence } from './presence.js?v=12';
-import { createPlayer } from './player.js?v=12';
-import { createProgramme } from './programme.js?v=12';
-import { createControls } from './controls.js?v=12';
+import { buildHall, addCurtains } from './hall.js?v=13';
+import { buildOrchestra } from './orchestra.js?v=13';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=13';
+import { createPresence } from './presence.js?v=13';
+import { makeChibi } from './audience.js?v=13';
+import { createPlayer } from './player.js?v=13';
+import { createProgramme } from './programme.js?v=13';
+import { createControls } from './controls.js?v=13';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -34,11 +35,13 @@ scene.fog = new THREE.FogExp2(0x1a1410, 0.012);
 
 const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 80);
 camera.position.set(0, 1.7, 12);
+const eye = camera.position.clone(); // logical first-person eye; render camera follows in third person
 
-buildHall(scene);
+const hallRoot = buildHall(scene);
 addCurtains(scene);
 const { animators } = buildOrchestra(scene);
 const { seats } = buildSeats(scene);
+const seatsGroup = scene.getObjectByName('seats');
 
 const controls = createControls(camera, canvas, {
   speed: 4.8,
@@ -100,7 +103,7 @@ const _dir = new THREE.Vector3();
 const presence = createPresence(scene, seats, {
   getSelf() {
     camera.getWorldDirection(_dir);
-    const p = camera.position;
+    const p = eye;
     const floorY = p.y > 9 ? 10.6 : p.y > 5 ? 5.9 : 0;
     return { seat: currentSeat ? seats.indexOf(currentSeat) : null, x: p.x, y: floorY, z: p.z, yaw: Math.atan2(-_dir.x, -_dir.z) };
   },
@@ -159,6 +162,7 @@ function sitIn(seat) {
   seatLabel.textContent = seat.userData.label;
   seatLabel.classList.remove('hidden');
   standBtn.classList.remove('hidden');
+  joystick?.classList.add('seated');
   hint.textContent = '正在聆听 · 点击「起身换座」可换位置';
   audio.updateForSeat(eye);
   programme.placeAtSeat(seat);
@@ -188,6 +192,7 @@ function standUp() {
   camera.position.copy(eye);
   seatLabel.classList.add('hidden');
   standBtn.classList.add('hidden');
+  joystick?.classList.remove('seated');
   hint.textContent = '走近空座位并点击，即可入座';
   audio.updateForSeat(eye);
 }
@@ -232,7 +237,7 @@ function onClick(e) {
     const sp = new THREE.Vector3();
     seat.getWorldPosition(sp);
     const dist = camera.position.distanceTo(sp);
-    if (dist < 4.0) {
+    if (dist < 6.5) {
       sitIn(seat);
     } else {
       showPrompt(seat);
@@ -274,21 +279,81 @@ window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
+// ===== Third-person: own chibi avatar + follow camera =====
+const me = makeChibi(presence.look); scene.add(me); me.visible = false;
+me.traverse((o) => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; } });
+const setMeOpacity = (a) => me.traverse((o) => { if (o.material) { o.material.opacity = a; o.material.depthWrite = a > 0.9; } });
+const lastTP = new THREE.Vector3(NaN, 0, 0);
+const prevEye = eye.clone();
+const colliders = [hallRoot];
+seatsGroup.children.forEach((c) => { if (!c.userData?.isSeat && c.name !== 'seat') colliders.push(c); });
+const tpRay = new THREE.Raycaster();
+const _f = new THREE.Vector3(), _head = new THREE.Vector3(), _want = new THREE.Vector3(), _q = new THREE.Quaternion();
+let walkPhase = 0, tpDist = 2.4;
+function thirdPerson(dt) {
+  if (!started) return;
+  me.visible = true;
+  const zoom = THREE.MathUtils.clamp(camera.fov / 65, 0.55, 1.3);
+  if (currentSeat) {
+    me.userData.setPose('sit'); setMeOpacity(0.35); // ghosted so it never hides the stage or booklet
+    currentSeat.getWorldPosition(me.position);
+    currentSeat.getWorldQuaternion(me.quaternion);
+    me.userData.legs[0].rotation.x = me.userData.legs[1].rotation.x = 0;
+    _head.copy(me.position); _head.y += 1.25;
+  } else {
+    me.userData.setPose('stand'); setMeOpacity(1);
+    const dx = eye.x - prevEye.x, dz = eye.z - prevEye.z, sp = Math.hypot(dx, dz) / Math.max(dt, 1e-3);
+    me.position.set(eye.x, eye.y - 1.7, eye.z);
+    if (sp > 0.3) {
+      let dy = Math.atan2(-dx, -dz) - me.rotation.y; dy = Math.atan2(Math.sin(dy), Math.cos(dy));
+      me.rotation.set(0, me.rotation.y + dy * Math.min(1, dt * 10), 0);
+      walkPhase += dt * 11;
+    } else walkPhase = 0;
+    const sw = Math.sin(walkPhase) * 0.55 * (sp > 0.3 ? 1 : 0);
+    me.userData.legs[0].rotation.x = sw; me.userData.legs[1].rotation.x = -sw;
+    me.position.y += Math.abs(Math.sin(walkPhase)) * 0.04;
+    _head.set(eye.x, eye.y - 0.35, eye.z);
+  }
+  prevEye.copy(eye);
+  // desired camera: behind & above along view direction
+  camera.getWorldDirection(_f);
+  const back = (currentSeat ? 0.55 : tpDist) * zoom, up = currentSeat ? 0.4 : 1.1;
+  _want.copy(_head).addScaledVector(_f, -back); _want.y += up;
+  if (currentSeat) { // over the right shoulder so the head doesn't block the stage
+    _want.x += -_f.z * 0.12; _want.z += _f.x * 0.12;
+  }
+  // pull in on collision
+  const dir = _want.clone().sub(_head); const L = dir.length(); dir.normalize();
+  tpRay.set(_head, dir); tpRay.far = L;
+  const hit = tpRay.intersectObjects(colliders, true)[0];
+  if (hit) _want.copy(_head).addScaledVector(dir, Math.max(0.2, hit.distance - 0.2));
+  if (Number.isNaN(lastTP.x)) camera.position.copy(_want); else camera.position.lerp(_want, Math.min(1, dt * 12));
+  camera.rotation.x -= currentSeat ? 0.25 : 0.2; // look slightly down onto the avatar
+  camera.updateMatrixWorld();
+  lastTP.copy(camera.position);
+}
+
 const clock = new THREE.Clock();
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = clock.elapsedTime;
+  // restore logical eye (unless someone else moved the camera, e.g. sitIn/standUp)
+  if (!Number.isNaN(lastTP.x) && camera.position.distanceTo(lastTP) < 1e-6) camera.position.copy(eye);
+  else lastTP.set(NaN, 0, 0);
   controls.update(dt);
+  eye.copy(camera.position);
   const playing = audio.isPlaying();
   for (const fn of animators) fn(t, playing);
   presence.update(t);
+  thirdPerson(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 tick();
+;
 
 // Expose for debugging / screenshot automation
-window.__hall = { programme, scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };
+window.__hall = { me, getEye: () => eye, programme, scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };
 
 // ===== Pinch / wheel zoom: adjusts field of view only (35°–85°, smoothed) =====
 let fovTarget = camera.fov;

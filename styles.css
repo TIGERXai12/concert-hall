@@ -118,3 +118,4 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0806; f
 #programme li.now{background:rgba(168,134,74,.16)}
 #programme li.now .pg-w::after{content:" ♪ 正在演奏";font-size:11px;color:#a0402a;margin-left:6px}
 #programme .pg-foot{text-align:center;font-size:10px;color:#a08a6a;margin-top:14px;letter-spacing:.2em}
+#joystick.seated{display:none}

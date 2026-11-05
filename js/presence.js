@@ -1,7 +1,7 @@
 // Realtime presence over public MQTT (WebSocket). No accounts. Page works alone if broker unreachable.
 import * as THREE from 'three';
 import mqttMod from '../vendor/mqtt.esm.js';
-import { makeChibi, randomLook } from './audience.js?v=12';
+import { makeChibi, randomLook } from './audience.js?v=13';
 const mqtt = mqttMod.connect ? mqttMod : mqttMod.default;
 
 const NS = 'concert-hall/tigerxai12/v1/presence/';
@@ -110,5 +110,5 @@ export function createPresence(scene, seats, { getSelf, onCount, onSeatsChanged 
 
   count();
   connect();
-  return { update, takenSeats, publishNow: () => publish(true), others, id };
+  return { update, takenSeats, publishNow: () => publish(true), others, id, look };
 }

@@ -67,7 +67,7 @@ export function createProgramme(scene, tracks, livePos) {
     holder.matrixAutoUpdate = true;
     if (front) { // pocket on the back of the seat in front, cover facing us
       front.updateWorldMatrix(true, false);
-      holder.position.set(0.13, 0.87, 0.272).applyMatrix4(front.matrixWorld);
+      holder.position.set(0.0, 0.87, 0.272).applyMatrix4(front.matrixWorld);
       front.getWorldQuaternion(holder.quaternion);
       holder.rotateX(-0.06);
       pocket.visible = true; stand.visible = false;
