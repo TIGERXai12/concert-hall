@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=5';
-import { buildOrchestra } from './orchestra.js?v=5';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=5';
-import { buildAudience } from './audience.js?v=5';
-import { createPlayer } from './player.js?v=5';
-import { createControls } from './controls.js?v=5';
+import { buildHall, addCurtains } from './hall.js?v=6';
+import { buildOrchestra } from './orchestra.js?v=6';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=6';
+import { buildAudience } from './audience.js?v=6';
+import { createPlayer } from './player.js?v=6';
+import { createControls } from './controls.js?v=6';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -220,6 +220,7 @@ enterBtn.addEventListener('click', () => {
     joystick?.classList.remove('hidden');
   }
   started = true;
+  setTimeout(() => hint.classList.add('fade'), 4000);
 });
 
 window.addEventListener('resize', () => {
