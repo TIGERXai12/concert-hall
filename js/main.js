@@ -1,0 +1,237 @@
+import * as THREE from 'three';
+import { buildHall, addCurtains } from './hall.js';
+import { buildOrchestra } from './orchestra.js';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js';
+import { createAudioSystem } from './audio.js';
+import { createControls } from './controls.js';
+
+const canvas = document.getElementById('c');
+const entry = document.getElementById('entry');
+const enterBtn = document.getElementById('enterBtn');
+const hud = document.getElementById('hud');
+const hint = document.getElementById('hint');
+const seatLabel = document.getElementById('seatLabel');
+const standBtn = document.getElementById('standBtn');
+const musicBtn = document.getElementById('musicBtn');
+const seatPrompt = document.getElementById('seatPrompt');
+const seatPromptText = document.getElementById('seatPromptText');
+const sitBtn = document.getElementById('sitBtn');
+const joystick = document.getElementById('joystick');
+
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1c1510);
+scene.fog = new THREE.FogExp2(0x1a1410, 0.012);
+
+const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 80);
+camera.position.set(0, 1.7, 12);
+
+buildHall(scene);
+addCurtains(scene);
+const { animators } = buildOrchestra(scene);
+const { seats } = buildSeats(scene);
+
+const controls = createControls(camera, canvas, {
+  speed: 4.8,
+  bounds: { minX: -14, maxX: 14, minZ: -9.5, maxZ: 19.5, minY: 1.7 },
+});
+
+const audio = createAudioSystem(camera, camera);
+audio.attachToScene(scene);
+audio.load('assets/audio/placeholder.mp3').catch((e) => {
+  console.warn('音频占位加载失败（可稍后替换曲目）', e);
+});
+
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let hoveredSeat = null;
+let currentSeat = null;
+let pendingSeat = null;
+let started = false;
+
+function findSeatRoot(obj) {
+  let o = obj;
+  while (o) {
+    if (o.userData?.isSeat && o.userData.label) return o;
+    if (o.userData?.seatRoot) return o.userData.seatRoot;
+    o = o.parent;
+  }
+  return null;
+}
+
+function pickSeat(clientX, clientY) {
+  pointer.x = (clientX / window.innerWidth) * 2 - 1;
+  pointer.y = -(clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(seats, true);
+  if (!hits.length) return null;
+  return findSeatRoot(hits[0].object);
+}
+
+function showPrompt(seat) {
+  pendingSeat = seat;
+  seatPromptText.textContent = seat.userData.label;
+  seatPrompt.classList.remove('hidden');
+}
+
+function hidePrompt() {
+  pendingSeat = null;
+  seatPrompt.classList.add('hidden');
+}
+
+function sitIn(seat) {
+  if (!seat || seat.userData.occupied) return;
+  if (currentSeat) setSeatOccupied(currentSeat, false);
+  currentSeat = seat;
+  setSeatOccupied(seat, true);
+  setSeatHover(hoveredSeat, false);
+  hoveredSeat = null;
+  hidePrompt();
+
+  const { eye, target } = getSeatCameraPose(seat);
+  controls.setSeated(true);
+  controls.lookAt(eye, target);
+
+  seatLabel.textContent = seat.userData.label;
+  seatLabel.classList.remove('hidden');
+  standBtn.classList.remove('hidden');
+  hint.textContent = '正在聆听 · 点击「起身换座」可换位置';
+  audio.updateForSeat(eye);
+}
+
+function standUp() {
+  if (!currentSeat) return;
+  const pos = new THREE.Vector3();
+  currentSeat.getWorldPosition(pos);
+  const floorName = currentSeat.userData.floor || '';
+  const seatYaw = currentSeat.rotation.y;
+  let eyeY = 1.7;
+  if (floorName.startsWith('二楼')) eyeY = Math.max(pos.y + 1.2, 6.5);
+  else if (floorName.startsWith('三楼')) eyeY = Math.max(pos.y + 1.2, 11.2);
+  else eyeY = Math.max(pos.y + 1.25, 1.7);
+  setSeatOccupied(currentSeat, false);
+  currentSeat = null;
+  controls.setSeated(false);
+  const forward = new THREE.Vector3(Math.sin(seatYaw), 0, Math.cos(seatYaw));
+  camera.position.copy(pos).addScaledVector(forward, 0.9);
+  camera.position.y = eyeY;
+  seatLabel.classList.add('hidden');
+  standBtn.classList.add('hidden');
+  hint.textContent = '走近空座位并点击，即可入座';
+}
+
+function onPointerMove(e) {
+  if (!started || controls.state.seated) return;
+  // Skip when pointer locked (desktop walking) — use center ray optionally
+  if (document.pointerLockElement === canvas) {
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const hits = raycaster.intersectObjects(seats, true);
+    const seat = hits.length ? findSeatRoot(hits[0].object) : null;
+    updateHover(seat);
+    return;
+  }
+  const seat = pickSeat(e.clientX, e.clientY);
+  updateHover(seat);
+}
+
+function updateHover(seat) {
+  if (seat === hoveredSeat) return;
+  setSeatHover(hoveredSeat, false);
+  hoveredSeat = seat && !seat.userData.occupied ? seat : null;
+  setSeatHover(hoveredSeat, true);
+  canvas.style.cursor = hoveredSeat ? 'pointer' : '';
+}
+
+function onClick(e) {
+  if (!started || controls.state.seated) return;
+  // Ignore clicks that are meant for UI
+  if (e.target.closest('#controls, #seatPrompt, #joystick, #entry')) return;
+
+  let seat = null;
+  if (document.pointerLockElement === canvas) {
+    raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+    const hits = raycaster.intersectObjects(seats, true);
+    seat = hits.length ? findSeatRoot(hits[0].object) : null;
+  } else {
+    seat = pickSeat(e.clientX, e.clientY);
+  }
+  if (seat && !seat.userData.occupied) {
+    // If close enough, sit directly; else show prompt
+    const sp = new THREE.Vector3();
+    seat.getWorldPosition(sp);
+    const dist = camera.position.distanceTo(sp);
+    if (dist < 4.0) {
+      sitIn(seat);
+    } else {
+      showPrompt(seat);
+      hint.textContent = '再靠近一点，或点「坐下」直接入座';
+    }
+  } else {
+    hidePrompt();
+  }
+}
+
+window.addEventListener('pointermove', onPointerMove);
+window.addEventListener('click', onClick);
+
+sitBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (pendingSeat) sitIn(pendingSeat);
+});
+
+standBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  standUp();
+});
+
+musicBtn.addEventListener('click', async (e) => {
+  e.stopPropagation();
+  const on = await audio.toggle();
+  musicBtn.textContent = on ? '♪ 暂停音乐' : '♪ 播放音乐';
+});
+
+enterBtn.addEventListener('click', async () => {
+  entry.classList.add('hidden');
+  hud.classList.remove('hidden');
+  if (window.matchMedia('(pointer: coarse)').matches) {
+    joystick?.classList.remove('hidden');
+  }
+  started = true;
+  await audio.unlock();
+  // Auto-start placeholder music on enter (user gesture)
+  try {
+    await audio.play();
+    musicBtn.textContent = '♪ 暂停音乐';
+  } catch (err) {
+    console.warn('自动播放被拦截，可手动点播放', err);
+  }
+});
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+const clock = new THREE.Clock();
+function tick() {
+  const dt = Math.min(clock.getDelta(), 0.05);
+  const t = clock.elapsedTime;
+  controls.update(dt);
+  const playing = audio.isPlaying();
+  for (const fn of animators) fn(t, playing);
+  renderer.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+tick();
+
+// Expose for debugging / screenshot automation
+window.__hall = { scene, camera, renderer, seats, sitIn, standUp, audio, controls };

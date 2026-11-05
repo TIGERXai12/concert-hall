@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>沉浸式音乐厅 · Immersive Concert Hall</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "./vendor/three/three.module.js",
+      "three/addons/": "./vendor/three/examples/jsm/"
+    }
+  }
+  </script>
+</head>
+<body>
+  <div id="entry">
+    <div class="entry-card">
+      <div class="entry-badge">原型 · Prototype</div>
+      <h1>沉浸式音乐厅</h1>
+      <p class="subtitle">参照富川艺术中心音乐厅气质 · 自己挑座位，听一场交响</p>
+      <ul class="tips">
+        <li>电脑：WASD / 方向键移动，鼠标环顾</li>
+        <li>手机：左侧摇杆移动，右侧滑动看向</li>
+        <li>走近座位点击即可入座；坐下后可起身换座</li>
+      </ul>
+      <button id="enterBtn" type="button">进入音乐厅</button>
+      <p class="credit-line">玩法灵感来自虚拟寺庙 · 场景参照富川艺术中心（原创建模）</p>
+    </div>
+  </div>
+
+  <div id="hud" class="hidden">
+    <div id="hint">走近空座位并点击，即可入座</div>
+    <div id="seatLabel" class="hidden"></div>
+    <div id="controls">
+      <button id="standBtn" class="hidden" type="button">起身换座</button>
+      <button id="musicBtn" type="button">♪ 播放音乐</button>
+    </div>
+  </div>
+
+  <div id="seatPrompt" class="hidden">
+    <span id="seatPromptText"></span>
+    <button id="sitBtn" type="button">坐下</button>
+  </div>
+
+  <div id="joystick" class="hidden">
+    <div id="joyBase"><div id="joyKnob"></div></div>
+  </div>
+
+  <canvas id="c"></canvas>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

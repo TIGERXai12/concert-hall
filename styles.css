@@ -1,0 +1,97 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0806; font-family: "PingFang SC", "Noto Sans SC", "Microsoft YaHei", sans-serif; color: #f5efe6; }
+#c { display: block; width: 100%; height: 100%; touch-action: none; }
+
+#entry {
+  position: fixed; inset: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: center;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgba(180,120,60,0.35), transparent 55%),
+    linear-gradient(180deg, #1a120c 0%, #0a0806 100%);
+}
+.entry-card {
+  width: min(440px, 92vw);
+  padding: 36px 32px 28px;
+  border-radius: 18px;
+  background: rgba(28, 20, 14, 0.88);
+  border: 1px solid rgba(212, 175, 110, 0.35);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.55);
+  text-align: center;
+}
+.entry-badge {
+  display: inline-block;
+  font-size: 12px; letter-spacing: 0.12em;
+  color: #d4af6e; border: 1px solid rgba(212,175,110,0.4);
+  padding: 4px 10px; border-radius: 999px; margin-bottom: 16px;
+}
+.entry-card h1 {
+  font-size: 32px; font-weight: 600; letter-spacing: 0.08em;
+  color: #f7e7c8; margin-bottom: 10px;
+}
+.subtitle { color: #cbbba0; font-size: 15px; margin-bottom: 22px; line-height: 1.5; }
+.tips {
+  text-align: left; list-style: none; margin: 0 0 24px;
+  color: #b9a890; font-size: 13px; line-height: 1.7;
+}
+.tips li::before { content: "· "; color: #d4af6e; }
+#enterBtn, #sitBtn, #standBtn, #musicBtn {
+  appearance: none; border: none; cursor: pointer;
+  background: linear-gradient(180deg, #e0c48a, #b8893f);
+  color: #2a1a0a; font-weight: 600; font-size: 16px;
+  padding: 12px 28px; border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(184,137,63,0.35);
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+#enterBtn:hover, #sitBtn:hover, #standBtn:hover, #musicBtn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+#enterBtn:active, #sitBtn:active, #standBtn:active, #musicBtn:active { transform: translateY(1px); }
+.credit-line { margin-top: 18px; font-size: 11px; color: #7a6a55; }
+
+#hud {
+  position: fixed; inset: 0; z-index: 20; pointer-events: none;
+}
+#hud.hidden, .hidden { display: none !important; }
+#hint {
+  position: absolute; top: 24px; left: 50%; transform: translateX(-50%);
+  background: rgba(12,8,5,0.55); border: 1px solid rgba(212,175,110,0.25);
+  padding: 8px 16px; border-radius: 999px; font-size: 13px; color: #e8dcc4;
+  backdrop-filter: blur(8px);
+}
+#seatLabel {
+  position: absolute; top: 64px; left: 50%; transform: translateX(-50%);
+  font-size: 18px; letter-spacing: 0.12em; color: #f7e7c8;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.7);
+}
+#controls {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; gap: 12px; pointer-events: auto;
+}
+#standBtn, #musicBtn { font-size: 14px; padding: 10px 18px; }
+
+#seatPrompt {
+  position: fixed; bottom: 96px; left: 50%; transform: translateX(-50%);
+  z-index: 25; display: flex; align-items: center; gap: 14px;
+  background: rgba(18,12,8,0.82); border: 1px solid rgba(212,175,110,0.4);
+  padding: 12px 16px 12px 20px; border-radius: 14px;
+  backdrop-filter: blur(10px);
+}
+#seatPromptText { font-size: 14px; color: #f0e2c8; white-space: nowrap; }
+#sitBtn { font-size: 14px; padding: 8px 18px; }
+
+#joystick {
+  position: fixed; left: 24px; bottom: 24px; z-index: 22;
+  width: 120px; height: 120px; touch-action: none;
+}
+#joyBase {
+  width: 120px; height: 120px; border-radius: 50%;
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.18);
+  position: relative;
+}
+#joyKnob {
+  width: 52px; height: 52px; border-radius: 50%;
+  background: rgba(224,196,138,0.55); border: 1px solid rgba(224,196,138,0.8);
+  position: absolute; left: 34px; top: 34px;
+  touch-action: none;
+}
+@media (min-width: 900px) {
+  #joystick { display: none !important; }
+}
