@@ -50,7 +50,7 @@ export function createControls(camera, domElement, options = {}) {
   let lookLast = null;
   domElement.addEventListener('touchstart', (e) => {
     for (const t of e.changedTouches) {
-      if (t.clientX > window.innerWidth * 0.45 && lookId === null) {
+      if (lookId === null && e.touches.length === 1) {
         lookId = t.identifier;
         lookLast = { x: t.clientX, y: t.clientY };
       }

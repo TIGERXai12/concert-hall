@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=16';
-import { buildOrchestra } from './orchestra.js?v=16';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=16';
-import { createPresence } from './presence.js?v=16';
-import { makeChibi } from './audience.js?v=16';
-import { createPlayer } from './player.js?v=16';
-import { createProgramme } from './programme.js?v=16';
-import { createControls } from './controls.js?v=16';
+import { buildHall, addCurtains } from './hall.js?v=17';
+import { buildOrchestra } from './orchestra.js?v=17';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=17';
+import { createPresence } from './presence.js?v=17';
+import { makeChibi } from './audience.js?v=17';
+import { createPlayer } from './player.js?v=17';
+import { createProgramme } from './programme.js?v=17';
+import { createControls } from './controls.js?v=17';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -209,7 +209,7 @@ function standUp() {
   seatLabel.classList.add('hidden');
   standBtn.classList.add('hidden');
   joystick?.classList.remove('seated');
-  hint.textContent = '走近空座位并点击，即可入座';
+  hint.textContent = '点地面走路 · 点座位入座 · 拖动环顾 · 双指缩放';
   audio.updateForSeat(eye);
 }
 
@@ -248,20 +248,64 @@ function onClick(e) {
   } else {
     seat = pickSeat(e.clientX, e.clientY);
   }
-  if (seat && !seat.userData.occupied) {
-    // If close enough, sit directly; else show prompt
-    const sp = new THREE.Vector3();
-    seat.getWorldPosition(sp);
-    const dist = camera.position.distanceTo(sp);
-    if (dist < 6.5) {
-      sitIn(seat);
-    } else {
-      showPrompt(seat);
-      hint.textContent = '再靠近一点，或点「坐下」直接入座';
-    }
-  } else {
-    hidePrompt();
+  if (seat && !seat.userData.occupied) { hidePrompt(); walkToSeat(seat); return; }
+  hidePrompt();
+  // tap a portal or floor spot → walk there
+  raycaster.setFromCamera(new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), camera);
+  const ph = raycaster.intersectObjects(portals.map((P) => P.mesh), true)[0];
+  if (ph) { const P = portals.find((q) => q.mesh === ph.object.parent || q.mesh === ph.object); if (P && P.from === curLevel) { walkTo(P.pos.x, P.pos.z); return; } }
+  const fh = raycaster.intersectObjects([...colliders, seatsGroup], true).find((h) => h.face && h.face.normal.y > -0.2);
+  const floorY = eye.y - 1.7;
+  if (fh && Math.abs(fh.point.y - floorY) < 1.6) walkTo(fh.point.x, fh.point.z);
+  else if (!fh) {
+    // fallback: intersect the current floor plane
+    const pl = new THREE.Plane(new THREE.Vector3(0, 1, 0), -floorY), q = new THREE.Vector3();
+    if (raycaster.ray.intersectPlane(pl, q)) walkTo(q.x, q.z);
   }
+}
+
+// ===== Tap-to-walk =====
+let walkGoal = null; // {x,z,seat}
+const marker = new THREE.Mesh(new THREE.RingGeometry(0.16, 0.24, 32), new THREE.MeshBasicMaterial({ color: 0xffe2a0, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+marker.rotation.x = -Math.PI / 2; marker.visible = false; scene.add(marker);
+function walkTo(x, z, seat = null) {
+  if (currentSeat) return;
+  x = THREE.MathUtils.clamp(x, WALK.minX, WALK.maxX); z = THREE.MathUtils.clamp(z, WALK.minZ, WALK.maxZ);
+  walkGoal = { x, z, seat };
+  marker.position.set(x, eye.y - 1.68, z); marker.visible = true; marker.scale.setScalar(1); marker.material.opacity = 1;
+}
+function levelIndexOfSeat(seat) {
+  const f = seat.userData.floor || '';
+  if (f.startsWith('一楼')) return 0;
+  const i = LEVELS.findIndex((L, k) => k && L.name === f && seat.userData.section === 'L区');
+  return i;
+}
+function walkToSeat(seat) {
+  const sp = new THREE.Vector3(); seat.getWorldPosition(sp);
+  const li = levelIndexOfSeat(seat);
+  if (li === curLevel || (li < 0 && Math.abs(sp.y + 1.5 - eye.y) < 1.2)) { walkTo(sp.x, sp.z, seat); return; }
+  if (li >= 0 && curLevel >= 0) { // route via stairs
+    const step = li > curLevel ? curLevel + 1 : curLevel - 1;
+    const P = portals.find((q) => q.from === curLevel && q.to === step);
+    if (P) { walkTo(P.pos.x, P.pos.z); walkGoal.after = seat; return; }
+  }
+  showPrompt(seat); hint.textContent = '这个座位走不到，点「坐下」直接入座';
+}
+function stepWalk(dt, t) {
+  if (marker.visible) { marker.material.opacity *= 0.985; marker.scale.setScalar(1 + 0.15 * Math.sin(t * 6)); if (!walkGoal && marker.material.opacity < 0.05) marker.visible = false; }
+  if (!walkGoal || currentSeat || transiting) return;
+  const dx = walkGoal.x - eye.x, dz = walkGoal.z - eye.z, d = Math.hypot(dx, dz);
+  const arrive = walkGoal.seat ? 0.35 : 0.1;
+  if (d < arrive) {
+    const g = walkGoal; walkGoal = null; marker.visible = false;
+    if (g.seat && !g.seat.userData.occupied) sitIn(g.seat);
+    return;
+  }
+  const v = Math.min(d, 2.4 * dt);
+  eye.x += dx / d * v; eye.z += dz / d * v; camera.position.copy(eye);
+  // turn the view gently toward the walking direction
+  let yaw = Math.atan2(-dx, -dz) - controls.state.yaw; yaw = Math.atan2(Math.sin(yaw), Math.cos(yaw));
+  controls.state.yaw += yaw * Math.min(1, dt * 2.5);
 }
 
 window.addEventListener('pointermove', onPointerMove);
@@ -283,7 +327,6 @@ enterBtn.addEventListener('click', () => {
   entry.classList.add('hidden');
   hud.classList.remove('hidden');
   if (('ontouchstart' in window) || navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches) {
-    joystick?.classList.remove('hidden');
   }
   started = true;
   setTimeout(() => hint.classList.add('fade'), 4000);
@@ -297,7 +340,15 @@ window.addEventListener('resize', () => {
 
 // ===== Third-person: own chibi avatar + follow camera =====
 const me = makeChibi(presence.look); scene.add(me); me.visible = false;
-me.traverse((o) => { if (o.material) { o.material = o.material.clone(); o.material.transparent = true; } });
+{ // Sansa-style name pill above own head
+  const c = document.createElement('canvas'); c.width = 192; c.height = 64; const g = c.getContext('2d');
+  g.fillStyle = 'rgba(255,250,240,.88)'; g.beginPath(); g.roundRect(4, 8, 184, 48, 24); g.fill();
+  g.fillStyle = '#6b4f2a'; g.beginPath(); g.arc(32, 32, 16, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = 'bold 20px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('我', 32, 33);
+  g.fillStyle = '#3a2a1a'; g.font = '22px sans-serif'; g.textAlign = 'left'; g.fillText(presence.look?.name || '听众', 58, 33);
+  const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
+  tag.scale.set(0.75, 0.25, 1); tag.position.y = 1.75; tag.renderOrder = 10; me.add(tag); me.userData.tag = tag;
+}
+me.traverse((o) => { if (o.material && !o.isSprite) { o.material = o.material.clone(); o.material.transparent = true; } });
 const setMeOpacity = (a) => me.traverse((o) => { if (o.material) { o.material.opacity = a; o.material.depthWrite = a > 0.9; } });
 const lastTP = new THREE.Vector3(NaN, 0, 0);
 const prevEye = eye.clone();
@@ -305,19 +356,19 @@ const colliders = [hallRoot];
 seatsGroup.children.forEach((c) => { if (!c.userData?.isSeat && c.name !== 'seat') colliders.push(c); });
 const tpRay = new THREE.Raycaster();
 const _f = new THREE.Vector3(), _head = new THREE.Vector3(), _want = new THREE.Vector3(), _q = new THREE.Quaternion();
-let walkPhase = 0, tpDist = 2.4; const tpPos = new THREE.Vector3();
+let walkPhase = 0, tpDist = 3.4; const tpPos = new THREE.Vector3();
 function thirdPerson(dt) {
   if (!started) return;
   me.visible = true;
   const zoom = THREE.MathUtils.clamp(camera.fov / 65, 0.55, 1.3);
   if (currentSeat) {
-    me.userData.setPose('sit'); setMeOpacity(0.6); me.scale.setScalar(0.8); // ghosted so it never hides the stage or booklet
+    me.userData.tag.visible = false; me.userData.setPose('sit'); setMeOpacity(0.75); me.scale.setScalar(1); // ghosted so it never hides the stage or booklet
     currentSeat.getWorldPosition(me.position);
     currentSeat.getWorldQuaternion(me.quaternion);
     me.userData.legs[0].rotation.x = me.userData.legs[1].rotation.x = 0;
     _head.copy(me.position); _head.y += 1.25;
   } else {
-    me.userData.setPose('stand'); setMeOpacity(1); me.scale.setScalar(1);
+    me.userData.tag.visible = true; me.userData.setPose('stand'); setMeOpacity(1); me.scale.setScalar(1);
     const dx = eye.x - prevEye.x, dz = eye.z - prevEye.z, sp = Math.hypot(dx, dz) / Math.max(dt, 1e-3);
     me.position.set(eye.x, eye.y - 1.7, eye.z);
     if (sp > 0.3) {
@@ -333,7 +384,7 @@ function thirdPerson(dt) {
   prevEye.copy(eye);
   // desired camera: behind & above along view direction
   camera.getWorldDirection(_f);
-  const back = (currentSeat ? 1.7 : tpDist) * zoom, up = currentSeat ? 1.05 : 1.1;
+  const back = (currentSeat ? 2.8 : tpDist) * zoom, up = currentSeat ? 1.25 : 1.15;
   _want.copy(_head).addScaledVector(_f, -back); _want.y += up;
   if (currentSeat) { // over the right shoulder so the head doesn't block the stage
     _want.x += -_f.z * 0.0; _want.z += _f.x * 0.0;
@@ -346,7 +397,7 @@ function thirdPerson(dt) {
   // smooth in a persistent vector (camera.position was reset to eye this frame, so lerping it caused dt-dependent shake)
   if (Number.isNaN(lastTP.x) || tpPos.distanceTo(_want) > 6) tpPos.copy(_want); else tpPos.lerp(_want, 1 - Math.exp(-dt * 10));
   camera.position.copy(tpPos);
-  camera.rotation.x -= currentSeat ? 0.3 : 0.2; // look slightly down onto the avatar
+  camera.rotation.x -= currentSeat ? 0.2 : 0.12; // look slightly down onto the avatar
   camera.updateMatrixWorld();
   lastTP.copy(camera.position);
 }
@@ -360,6 +411,7 @@ function tick() {
   else lastTP.set(NaN, 0, 0);
   controls.update(dt);
   eye.copy(camera.position);
+  stepWalk(dt, t);
   const playing = audio.isPlaying();
   for (const fn of animators) fn(t, playing);
   presence.update(t);
@@ -423,6 +475,8 @@ function goPortal(P) {
     e.x = THREE.MathUtils.clamp(e.x, B.minX, B.maxX); e.z = THREE.MathUtils.clamp(e.z, B.minZ, B.maxZ);
     camera.position.copy(e); controls.lookAt(e, new THREE.Vector3(STAGE_FOCUS.x, e.y - 0.6, STAGE_FOCUS.z)); camera.position.copy(e);
     audio.updateForSeat(e); portalArmed = false;
+    const after = walkGoal && walkGoal.after; walkGoal = null; eye.copy(e);
+    if (after) setTimeout(() => walkToSeat(after), 400);
     fadeEl.style.opacity = '0'; setTimeout(() => { transiting = false; }, 1500);
   }, 380);
 }

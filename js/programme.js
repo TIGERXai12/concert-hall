@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { STAGE_FOCUS } from './seats.js?v=16';
+import { STAGE_FOCUS } from './seats.js?v=17';
 // In-world printed programme (节目单) resting in front of the seated listener.
 function coverTexture() {
   const c = document.createElement('canvas'); c.width = 256; c.height = 360;
