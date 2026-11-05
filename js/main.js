@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=14';
-import { buildOrchestra } from './orchestra.js?v=14';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=14';
-import { createPresence } from './presence.js?v=14';
-import { makeChibi } from './audience.js?v=14';
-import { createPlayer } from './player.js?v=14';
-import { createProgramme } from './programme.js?v=14';
-import { createControls } from './controls.js?v=14';
+import { buildHall, addCurtains } from './hall.js?v=15';
+import { buildOrchestra } from './orchestra.js?v=15';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=15';
+import { createPresence } from './presence.js?v=15';
+import { makeChibi } from './audience.js?v=15';
+import { createPlayer } from './player.js?v=15';
+import { createProgramme } from './programme.js?v=15';
+import { createControls } from './controls.js?v=15';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -43,9 +43,18 @@ const { animators } = buildOrchestra(scene);
 const { seats } = buildSeats(scene);
 const seatsGroup = scene.getObjectByName('seats');
 
+const FLOOR_BOUNDS = { minX: -14, maxX: 14, minZ: -9.5, maxZ: 19.5, minY: 1.7 };
+const WALK = { ...FLOOR_BOUNDS };
+// Walkable area of a balcony section = bounding box of its seats (+ small margin)
+function sectionBounds(seat) {
+  const b = { minX: 1e9, maxX: -1e9, minZ: 1e9, maxZ: -1e9 }, p = new THREE.Vector3();
+  seatsGroup.traverse((o) => { if (o.userData.floor === seat.userData.floor && o.userData.section === seat.userData.section && o.userData.label) {
+    o.getWorldPosition(p); b.minX = Math.min(b.minX, p.x); b.maxX = Math.max(b.maxX, p.x); b.minZ = Math.min(b.minZ, p.z); b.maxZ = Math.max(b.maxZ, p.z); } });
+  const m = 0.4; b.minX -= m; b.maxX += m; b.minZ -= m; b.maxZ += m; return b;
+}
 const controls = createControls(camera, canvas, {
   speed: 4.8,
-  bounds: { minX: -14, maxX: 14, minZ: -9.5, maxZ: 19.5, minY: 1.7 },
+  bounds: WALK,
 });
 
 // ===== 曲目单（由主人决定，观众只听）：按顺序播放，播完循环。改这里即可 =====
@@ -185,14 +194,15 @@ function standUp() {
   controls.setSeated(false);
   let eye;
   if ((seat.userData.floor || '').startsWith('一楼') && pos.y < 2.5) {
-    // Stand right where the seat is (main floor), one step toward the aisle side
+    Object.assign(WALK, FLOOR_BOUNDS);
     eye = new THREE.Vector3(pos.x, 1.7, pos.z);
   } else {
-    // Balconies / choir: return to a main-floor aisle spot facing the stage
-    eye = new THREE.Vector3(STAGE_FOCUS.x, 1.7, 11);
+    // Balconies / choir / 3F: stay on this level, walk within its section
+    Object.assign(WALK, sectionBounds(seat), { minY: pos.y + 1.5 });
+    eye = new THREE.Vector3(pos.x, pos.y + 1.5, pos.z);
   }
-  eye.x = THREE.MathUtils.clamp(eye.x, -13.5, 13.5);
-  eye.z = THREE.MathUtils.clamp(eye.z, -9, 19);
+  eye.x = THREE.MathUtils.clamp(eye.x, WALK.minX, WALK.maxX);
+  eye.z = THREE.MathUtils.clamp(eye.z, WALK.minZ, WALK.maxZ);
   controls.lookAt(eye, new THREE.Vector3(STAGE_FOCUS.x, 1.7, STAGE_FOCUS.z));
   camera.position.copy(eye);
   seatLabel.classList.add('hidden');
@@ -300,13 +310,13 @@ function thirdPerson(dt) {
   me.visible = true;
   const zoom = THREE.MathUtils.clamp(camera.fov / 65, 0.55, 1.3);
   if (currentSeat) {
-    me.userData.setPose('sit'); setMeOpacity(0.35); // ghosted so it never hides the stage or booklet
+    me.userData.setPose('sit'); setMeOpacity(0.3); me.scale.setScalar(0.8); // ghosted so it never hides the stage or booklet
     currentSeat.getWorldPosition(me.position);
     currentSeat.getWorldQuaternion(me.quaternion);
     me.userData.legs[0].rotation.x = me.userData.legs[1].rotation.x = 0;
     _head.copy(me.position); _head.y += 1.25;
   } else {
-    me.userData.setPose('stand'); setMeOpacity(1);
+    me.userData.setPose('stand'); setMeOpacity(1); me.scale.setScalar(1);
     const dx = eye.x - prevEye.x, dz = eye.z - prevEye.z, sp = Math.hypot(dx, dz) / Math.max(dt, 1e-3);
     me.position.set(eye.x, eye.y - 1.7, eye.z);
     if (sp > 0.3) {
@@ -322,18 +332,18 @@ function thirdPerson(dt) {
   prevEye.copy(eye);
   // desired camera: behind & above along view direction
   camera.getWorldDirection(_f);
-  const back = (currentSeat ? 0.55 : tpDist) * zoom, up = currentSeat ? 0.4 : 1.1;
+  const back = (currentSeat ? 1.7 : tpDist) * zoom, up = currentSeat ? 1.05 : 1.1;
   _want.copy(_head).addScaledVector(_f, -back); _want.y += up;
   if (currentSeat) { // over the right shoulder so the head doesn't block the stage
-    _want.x += -_f.z * 0.12; _want.z += _f.x * 0.12;
+    _want.x += -_f.z * 0.3; _want.z += _f.x * 0.3;
   }
   // pull in on collision
   const dir = _want.clone().sub(_head); const L = dir.length(); dir.normalize();
   tpRay.set(_head, dir); tpRay.far = L;
-  const hit = tpRay.intersectObjects(colliders, true)[0];
+  const hit = currentSeat ? null : tpRay.intersectObjects(colliders, true)[0];
   if (hit) _want.copy(_head).addScaledVector(dir, Math.max(0.2, hit.distance - 0.2));
   if (Number.isNaN(lastTP.x)) camera.position.copy(_want); else camera.position.lerp(_want, Math.min(1, dt * 12));
-  camera.rotation.x -= currentSeat ? 0.25 : 0.2; // look slightly down onto the avatar
+  camera.rotation.x -= currentSeat ? 0.3 : 0.2; // look slightly down onto the avatar
   camera.updateMatrixWorld();
   lastTP.copy(camera.position);
 }
