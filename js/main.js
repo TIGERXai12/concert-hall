@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=18';
-import { buildOrchestra } from './orchestra.js?v=18';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=18';
-import { createPresence } from './presence.js?v=18';
-import { makeChibi } from './audience.js?v=18';
-import { createPlayer } from './player.js?v=18';
-import { createProgramme } from './programme.js?v=18';
-import { createControls } from './controls.js?v=18';
+import { buildHall, addCurtains } from './hall.js?v=19';
+import { buildOrchestra } from './orchestra.js?v=19';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=19';
+import { createPresence } from './presence.js?v=19';
+import { makeChibi } from './audience.js?v=19';
+import { createPlayer } from './player.js?v=19';
+import { createProgramme } from './programme.js?v=19';
+import { createControls } from './controls.js?v=19';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -347,14 +347,6 @@ window.addEventListener('resize', () => {
 
 // ===== Third-person: own chibi avatar + follow camera =====
 const me = makeChibi(presence.look); scene.add(me); me.visible = false;
-{ // Sansa-style name pill above own head
-  const c = document.createElement('canvas'); c.width = 192; c.height = 64; const g = c.getContext('2d');
-  g.fillStyle = 'rgba(255,250,240,.88)'; g.beginPath(); g.roundRect(4, 8, 184, 48, 24); g.fill();
-  g.fillStyle = '#6b4f2a'; g.beginPath(); g.arc(32, 32, 16, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = 'bold 20px sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('我', 32, 33);
-  g.fillStyle = '#3a2a1a'; g.font = '22px sans-serif'; g.textAlign = 'left'; g.fillText(presence.look?.name || '听众', 58, 33);
-  const tag = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false, transparent: true }));
-  tag.scale.set(0.75, 0.25, 1); tag.position.y = 1.75; tag.renderOrder = 10; me.add(tag); me.userData.tag = tag;
-}
 me.traverse((o) => { if (o.material && !o.isSprite) { o.material = o.material.clone(); o.material.transparent = true; } });
 const setMeOpacity = (a) => me.traverse((o) => { if (o.material) { o.material.opacity = a; o.material.depthWrite = a > 0.9; } });
 const lastTP = new THREE.Vector3(NaN, 0, 0);
@@ -369,13 +361,13 @@ function thirdPerson(dt) {
   me.visible = true;
   const zoom = THREE.MathUtils.clamp(camera.fov / 65, 0.55, 1.3);
   if (currentSeat) {
-    me.userData.tag.visible = false; me.userData.setPose('sit'); setMeOpacity(0.75); me.scale.setScalar(1); // ghosted so it never hides the stage or booklet
+    me.userData.setPose('sit'); setMeOpacity(0.75); me.scale.setScalar(1); // ghosted so it never hides the stage or booklet
     currentSeat.getWorldPosition(me.position);
     currentSeat.getWorldQuaternion(me.quaternion);
     me.userData.legs[0].rotation.x = me.userData.legs[1].rotation.x = 0;
     _head.copy(me.position); _head.y += 1.25;
   } else {
-    me.userData.tag.visible = true; me.userData.setPose('stand'); setMeOpacity(1); me.scale.setScalar(1);
+    me.userData.setPose('stand'); setMeOpacity(1); me.scale.setScalar(1);
     const dx = eye.x - prevEye.x, dz = eye.z - prevEye.z, sp = Math.hypot(dx, dz) / Math.max(dt, 1e-3);
     me.position.set(eye.x, eye.y - 1.7, eye.z);
     if (sp > 0.3) {
