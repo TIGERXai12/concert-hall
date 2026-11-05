@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=6';
-import { buildOrchestra } from './orchestra.js?v=6';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=6';
-import { buildAudience } from './audience.js?v=6';
-import { createPlayer } from './player.js?v=6';
-import { createControls } from './controls.js?v=6';
+import { buildHall, addCurtains } from './hall.js?v=7';
+import { buildOrchestra } from './orchestra.js?v=7';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=7';
+import { createPresence } from './presence.js?v=7';
+import { createPlayer } from './player.js?v=7';
+import { createControls } from './controls.js?v=7';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -38,7 +38,6 @@ buildHall(scene);
 addCurtains(scene);
 const { animators } = buildOrchestra(scene);
 const { seats } = buildSeats(scene);
-const audience = buildAudience(scene, seats);
 
 const controls = createControls(camera, canvas, {
   speed: 4.8,
@@ -48,9 +47,13 @@ const controls = createControls(camera, canvas, {
 // ===== 曲目单（由主人决定，观众只听）：按顺序播放，播完循环。改这里即可 =====
 const TRACKS = [
   { title: '拉赫玛尼诺夫《第二钢琴协奏曲》第一乐章', url: 'assets/audio/rachmaninoff-pc2-i.mp3', duration: 300.024 },
+  { title: '肖邦《降E大调夜曲》Op.9 No.2', url: 'assets/audio/chopin-nocturne-op9-2.mp3', duration: 271.517 },
   { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3', duration: 300.042 },
+  { title: '德彪西《月光》', url: 'assets/audio/debussy-clair-de-lune.mp3', duration: 304.118 },
   { title: '贝多芬《第五交响曲·命运》第一乐章', url: 'assets/audio/beethoven-sym5-i.mp3', duration: 300.024 },
+  { title: '肖邦《革命练习曲》Op.10 No.12', url: 'assets/audio/chopin-etude-revolutionary.mp3', duration: 164.833 },
   { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3', duration: 300.024 },
+  { title: '李斯特《钟》La Campanella', url: 'assets/audio/liszt-la-campanella.mp3', duration: 372.219 },
 ];
 const audio = createPlayer(TRACKS, {
   onStatus(s) {
@@ -72,6 +75,23 @@ const pointer = new THREE.Vector2();
 let hoveredSeat = null;
 let currentSeat = null;
 let pendingSeat = null;
+
+// ===== 在线观众（只显示真实在线用户）=====
+const onlineEl = document.getElementById('online');
+const _dir = new THREE.Vector3();
+const presence = createPresence(scene, seats, {
+  getSelf() {
+    camera.getWorldDirection(_dir);
+    const p = camera.position;
+    const floorY = p.y > 9 ? 10.6 : p.y > 5 ? 5.9 : 0;
+    return { seat: currentSeat ? seats.indexOf(currentSeat) : null, x: p.x, y: floorY, z: p.z, yaw: Math.atan2(-_dir.x, -_dir.z) };
+  },
+  onCount(n) { if (onlineEl) onlineEl.textContent = '在线 ' + n; },
+  onSeatsChanged() {
+    const taken = presence ? presence.takenSeats() : new Set();
+    seats.forEach((st, i) => { if (st !== currentSeat) setSeatOccupied(st, taken.has(i)); });
+  },
+});
 let started = false;
 
 function findSeatRoot(obj) {
@@ -106,9 +126,9 @@ function hidePrompt() {
 
 function sitIn(seat) {
   if (!seat || seat.userData.occupied) return;
-  if (currentSeat) { setSeatOccupied(currentSeat, false); audience.setSeatFree(currentSeat, false); }
+  if (presence.takenSeats().has(seats.indexOf(seat))) return;
+  if (currentSeat) setSeatOccupied(currentSeat, false);
   currentSeat = seat;
-  audience.setSeatFree(seat, true);
   setSeatOccupied(seat, true);
   setSeatHover(hoveredSeat, false);
   hoveredSeat = null;
@@ -136,7 +156,6 @@ function standUp() {
   else if (floorName.startsWith('三楼')) eyeY = Math.max(pos.y + 1.2, 11.2);
   else eyeY = Math.max(pos.y + 1.25, 1.7);
   setSeatOccupied(currentSeat, false);
-  audience.setSeatFree(currentSeat, false);
   currentSeat = null;
   controls.setSeated(false);
   const forward = new THREE.Vector3(Math.sin(seatYaw), 0, Math.cos(seatYaw));
@@ -236,11 +255,11 @@ function tick() {
   controls.update(dt);
   const playing = audio.isPlaying();
   for (const fn of animators) fn(t, playing);
-  audience.update(t, playing);
+  presence.update(t);
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 tick();
 
 // Expose for debugging / screenshot automation
-window.__hall = { scene, camera, renderer, seats, audience, sitIn, standUp, audio, controls };
+window.__hall = { scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };

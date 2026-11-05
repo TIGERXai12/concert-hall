@@ -23,3 +23,8 @@
 - Tchaikovsky — Piano Concerto No. 1, Op. 23, I. Allegro — Musopen — CC0 — https://commons.wikimedia.org/wiki/File:Tchaikovsky,_Concerto_No.1_in_B-flat_minor_Op.23,_I._Allegro.ogg
 - Beethoven — Symphony No. 5, Op. 67, I. Allegro con brio — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg
 - Dvořák — Symphony No. 9 "From the New World", Op. 95, IV. Allegro con fuoco — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Antonin_Dvorak_-_symphony_no._9_in_e_minor_'from_the_new_world',_op._95_-_iv._allegro_con_fuoco.ogg
+- Chopin — Nocturne Op. 9 No. 2 — Frank Lévy (piano) — Public domain — https://commons.wikimedia.org/wiki/File:Chopin_-_Nocturne_No._2_in_E-flat_major,_Op._9_No._2_(Frank_Levy).flac
+- Debussy — Clair de lune (Suite bergamasque) — Public domain — https://commons.wikimedia.org/wiki/File:Clair_de_lune_(Claude_Debussy)_Suite_bergamasque.ogg
+- Chopin — Étude Op. 10 No. 12 "Revolutionary" — Edward Neeman (piano) — Public domain — https://commons.wikimedia.org/wiki/File:Chopin_-_12_Études,_Op._10_-_No._12_in_C_minor_'Revolutionary'_(Edward_Neeman).flac
+- Liszt — La Campanella — Greiss (piano) — Public domain — https://commons.wikimedia.org/wiki/File:Liszt-La_Campanella-Greiss.ogg
+(Piano pieces are full-length, re-encoded 96k MP3.)
