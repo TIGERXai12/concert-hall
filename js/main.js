@@ -1,10 +1,11 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=8';
-import { buildOrchestra } from './orchestra.js?v=8';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=8';
-import { createPresence } from './presence.js?v=8';
-import { createPlayer } from './player.js?v=8';
-import { createControls } from './controls.js?v=8';
+import { buildHall, addCurtains } from './hall.js?v=9';
+import { buildOrchestra } from './orchestra.js?v=9';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=9';
+import { createPresence } from './presence.js?v=9';
+import { createPlayer } from './player.js?v=9';
+import { createProgramme } from './programme.js?v=9';
+import { createControls } from './controls.js?v=9';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -71,6 +72,16 @@ audio.updateForSeat = (eye) => {
 };
 
 const raycaster = new THREE.Raycaster();
+const programme = createProgramme(scene, TRACKS, () => audio.livePos());
+// Tap the booklet → open programme (captures before seat logic)
+window.addEventListener('click', (e) => {
+  if (!programme.booklet.visible || programme.isOpen()) return;
+  const v = document.pointerLockElement ? new THREE.Vector2(0, 0)
+    : new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  raycaster.setFromCamera(v, camera);
+  const hit = raycaster.intersectObject(programme.booklet, false);
+  if (hit.length && hit[0].distance < 3) { e.stopImmediatePropagation(); e.preventDefault(); programme.open(); }
+}, true);
 const pointer = new THREE.Vector2();
 let hoveredSeat = null;
 let currentSeat = null;
@@ -143,6 +154,7 @@ function sitIn(seat) {
   standBtn.classList.remove('hidden');
   hint.textContent = '正在聆听 · 点击「起身换座」可换位置';
   audio.updateForSeat(eye);
+  programme.placeAtSeat(seat);
 }
 
 function standUp() {
@@ -156,6 +168,7 @@ function standUp() {
   else if (floorName.startsWith('三楼')) eyeY = Math.max(pos.y + 1.2, 11.2);
   else eyeY = Math.max(pos.y + 1.25, 1.7);
   setSeatOccupied(currentSeat, false);
+  programme.placeAtSeat(null);
   currentSeat = null;
   controls.setSeated(false);
   const forward = new THREE.Vector3(Math.sin(seatYaw), 0, Math.cos(seatYaw));
@@ -262,4 +275,4 @@ function tick() {
 tick();
 
 // Expose for debugging / screenshot automation
-window.__hall = { scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };
+window.__hall = { programme, scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };
