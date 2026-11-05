@@ -12,13 +12,13 @@
 - 公开要点：约 1,445 座；鞋盒 + 葡萄园混合；舞台后方加拿大 Casavant Frères 管风琴（4,576 管）；合唱席 P 区在琴前；天花可升降声学反射板；桦木/暖色木饰面；1F/2F/3F 分层
 
 ## 音频（占位，可替换）
-- 当前文件：`assets/audio/placeholder.mp3`（ffmpeg 短促正弦叠音，仅联调）
+- 占位音已移除，见下方 Music。
 - 替换时覆盖该文件或改 `js/main.js` 中 `audio.load(...)`，并在此记录来源与许可
 
 ## 依赖
 - Three.js r170（本地 `vendor/three/three.module.js`）
 
-## Music (all from Wikimedia Commons, Musopen recordings; trimmed to first 5 min, re-encoded 128k MP3)
+## Music (all from Wikimedia Commons, Musopen recordings; trimmed to first 5 min, re-encoded 96k MP3)
 - Rachmaninoff — Piano Concerto No. 2, Op. 18, I. Moderato — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Sergei_Rachmaninoff_-_piano_concerto_no._2_in_c_minor,_op._18_-_i._moderato.ogg
 - Tchaikovsky — Piano Concerto No. 1, Op. 23, I. Allegro — Musopen — CC0 — https://commons.wikimedia.org/wiki/File:Tchaikovsky,_Concerto_No.1_in_B-flat_minor_Op.23,_I._Allegro.ogg
 - Beethoven — Symphony No. 5, Op. 67, I. Allegro con brio — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg

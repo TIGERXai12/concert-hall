@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js';
-import { buildOrchestra } from './orchestra.js';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js';
-import { buildAudience } from './audience.js';
-import { createAudioSystem } from './audio.js';
-import { createControls } from './controls.js';
+import { buildHall, addCurtains } from './hall.js?v=3';
+import { buildOrchestra } from './orchestra.js?v=3';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=3';
+import { buildAudience } from './audience.js?v=3';
+import { createPlayer } from './player.js?v=3';
+import { createControls } from './controls.js?v=3';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -13,7 +13,6 @@ const hud = document.getElementById('hud');
 const hint = document.getElementById('hint');
 const seatLabel = document.getElementById('seatLabel');
 const standBtn = document.getElementById('standBtn');
-const musicBtn = document.getElementById('musicBtn');
 const seatPrompt = document.getElementById('seatPrompt');
 const seatPromptText = document.getElementById('seatPromptText');
 const sitBtn = document.getElementById('sitBtn');
@@ -46,25 +45,27 @@ const controls = createControls(camera, canvas, {
   bounds: { minX: -14, maxX: 14, minZ: -9.5, maxZ: 19.5, minY: 1.7 },
 });
 
-const audio = createAudioSystem(camera, camera);
-audio.attachToScene(scene);
+// ===== 曲目单（由主人决定，观众只听）：按顺序播放，播完循环。改这里即可 =====
 const TRACKS = [
   { title: '拉赫玛尼诺夫《第二钢琴协奏曲》第一乐章', url: 'assets/audio/rachmaninoff-pc2-i.mp3' },
   { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3' },
   { title: '贝多芬《第五交响曲·命运》第一乐章', url: 'assets/audio/beethoven-sym5-i.mp3' },
   { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3' },
 ];
-let trackIdx = 0;
-const trackTitle = document.getElementById('trackTitle');
-async function loadTrack(i) {
-  trackIdx = (i + TRACKS.length) % TRACKS.length;
-  trackTitle.textContent = '加载中… ' + TRACKS[trackIdx].title;
-  try { await audio.load(TRACKS[trackIdx].url); trackTitle.textContent = '♫ ' + TRACKS[trackIdx].title; }
-  catch (e) { console.warn('曲目加载失败', e); trackTitle.textContent = '加载失败，请换一首'; }
-}
-loadTrack(0);
-document.getElementById('prevBtn').addEventListener('click', (e) => { e.stopPropagation(); loadTrack(trackIdx - 1); });
-document.getElementById('nextBtn').addEventListener('click', (e) => { e.stopPropagation(); loadTrack(trackIdx + 1); });
+const audio = createPlayer(TRACKS, {
+  onStatus(s) {
+    if (s === 'blocked') {
+      // Fallback: start on the next touch/click anywhere (no visible button)
+      const retry = () => { audio.play(); };
+      window.addEventListener('pointerdown', retry, { once: true, capture: true });
+      window.addEventListener('touchend', retry, { once: true, capture: true });
+    }
+  },
+});
+audio.updateForSeat = (eye) => {
+  const d = Math.hypot(eye.x, eye.y - 2.2, eye.z + 1);
+  audio.setVolume(Math.min(1, Math.max(0.5, 1.25 - d / 30)));
+};
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -210,27 +211,15 @@ standBtn.addEventListener('click', (e) => {
   standUp();
 });
 
-musicBtn.addEventListener('click', async (e) => {
-  e.stopPropagation();
-  const on = await audio.toggle();
-  musicBtn.textContent = on ? '♪ 暂停音乐' : '♪ 播放音乐';
-});
 
-enterBtn.addEventListener('click', async () => {
+enterBtn.addEventListener('click', () => {
+  audio.play(); // synchronous in gesture
   entry.classList.add('hidden');
   hud.classList.remove('hidden');
   if (window.matchMedia('(pointer: coarse)').matches) {
     joystick?.classList.remove('hidden');
   }
   started = true;
-  await audio.unlock();
-  // Auto-start placeholder music on enter (user gesture)
-  try {
-    await audio.play();
-    musicBtn.textContent = '♪ 暂停音乐';
-  } catch (err) {
-    console.warn('自动播放被拦截，可手动点播放', err);
-  }
 });
 
 window.addEventListener('resize', () => {

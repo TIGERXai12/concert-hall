@@ -22,7 +22,10 @@ python3 -m http.server 8765
 ## 舞台与音响
 
 - 协奏布局：黑亮三角钢琴在台口中央（琴尾朝乐团/上台口，键盘在观众左侧，独奏者侧对观众）；盖板朝观众打开；指挥台在钢琴曲线后方，指挥站在台上；弦乐外移让位
-- 占位音乐用多路 `PositionalAudio`（弦乐 L/R、木管、铜管、打击、**钢琴**）；曲目可替换 `assets/audio/placeholder.mp3`
+- 音乐用 HTMLAudioElement 流式播放（边下边播，兼容 iOS/微信）。
+
+## 改曲目单
+编辑 `js/main.js` 里的 `TRACKS` 数组（title + url），把 mp3 放进 `assets/audio/`。按数组顺序播放，播完循环；观众不能切歌，也没有任何播放按钮：点「进入」即自动开始。改完把 index.html / main.js 里的 `?v=3` 加一，防手机缓存。
 
 ## 截图
 

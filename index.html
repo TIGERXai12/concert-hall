@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>沉浸式音乐厅 · Immersive Concert Hall</title>
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=3" />
   <script type="importmap">
   {
     "imports": {
@@ -36,10 +36,6 @@
     <div id="seatLabel" class="hidden"></div>
     <div id="controls">
       <button id="standBtn" class="hidden" type="button">起身换座</button>
-      <button id="prevBtn" type="button">⏮</button>
-      <button id="musicBtn" type="button">♪ 播放音乐</button>
-      <button id="nextBtn" type="button">⏭</button>
-      <div id="trackTitle"></div>
     </div>
   </div>
 
@@ -54,6 +50,6 @@
 
   <canvas id="c"></canvas>
 
-  <script type="module" src="js/main.js"></script>
+  <script type="module" src="js/main.js?v=3"></script>
 </body>
 </html>
