@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=17';
-import { buildOrchestra } from './orchestra.js?v=17';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=17';
-import { createPresence } from './presence.js?v=17';
-import { makeChibi } from './audience.js?v=17';
-import { createPlayer } from './player.js?v=17';
-import { createProgramme } from './programme.js?v=17';
-import { createControls } from './controls.js?v=17';
+import { buildHall, addCurtains } from './hall.js?v=18';
+import { buildOrchestra } from './orchestra.js?v=18';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=18';
+import { createPresence } from './presence.js?v=18';
+import { makeChibi } from './audience.js?v=18';
+import { createPlayer } from './player.js?v=18';
+import { createProgramme } from './programme.js?v=18';
+import { createControls } from './controls.js?v=18';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -62,16 +62,23 @@ const TRACKS = [
   { title: '拉赫玛尼诺夫《第二钢琴协奏曲》第一乐章', url: 'assets/audio/rachmaninoff-pc2-i.mp3', duration: 300.024 },
   { title: '圣桑《骷髅之舞》Op.40', url: 'assets/audio/saint-saens-danse-macabre.mp3', duration: 300.042 },
   { title: '肖邦《降E大调夜曲》Op.9 No.2', url: 'assets/audio/chopin-nocturne-op9-2.mp3', duration: 271.517 },
-  { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3', duration: 300.042 },
-  { title: '贝多芬《悲怆奏鸣曲》第一乐章', url: 'assets/audio/beethoven-pathetique-i.mp3', duration: 300.042 },
-  { title: '德彪西《月光》', url: 'assets/audio/debussy-clair-de-lune.mp3', duration: 304.118 },
   { title: '贝多芬《第五交响曲·命运》第一乐章', url: 'assets/audio/beethoven-sym5-i.mp3', duration: 300.024 },
+  { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3', duration: 300.042 },
+  { title: '柴可夫斯基《天鹅湖》第二幕选段', url: 'assets/audio/tchaikovsky-swan-lake.mp3', duration: 300.042 },
+  { title: '贝多芬《悲怆奏鸣曲》第一乐章', url: 'assets/audio/beethoven-pathetique-i.mp3', duration: 300.042 },
+  { title: '莫扎特《第40交响曲》第一乐章', url: 'assets/audio/mozart-sym40-i.mp3', duration: 300.042 },
+  { title: '德彪西《月光》', url: 'assets/audio/debussy-clair-de-lune.mp3', duration: 304.118 },
+  { title: '穆索尔斯基《荒山之夜》', url: 'assets/audio/mussorgsky-bald-mountain.mp3', duration: 300.042 },
+  { title: '格里格《a小调钢琴协奏曲》第一乐章', url: 'assets/audio/grieg-pc-i.mp3', duration: 300.042 },
+  { title: '门德尔松《第四交响曲·意大利》第一乐章', url: 'assets/audio/mendelssohn-italian-i.mp3', duration: 300.042 },
   { title: '肖邦《练习曲》Op.10 No.4', url: 'assets/audio/chopin-etude-op10-4.mp3', duration: 132.598 },
+  { title: '柴可夫斯基《第六交响曲·悲怆》第三乐章', url: 'assets/audio/tchaikovsky-sym6-iii.mp3', duration: 300.042 },
   { title: '肖邦《革命练习曲》Op.10 No.12', url: 'assets/audio/chopin-etude-revolutionary.mp3', duration: 164.833 },
-  { title: '李斯特《安慰曲》第3首', url: 'assets/audio/liszt-consolation-3.mp3', duration: 226.429 },
-  { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3', duration: 300.024 },
   { title: '巴赫《耶稣，世人仰望的喜悦》BWV 147', url: 'assets/audio/bach-jesu-joy.mp3', duration: 202.292 },
+  { title: '李斯特《安慰曲》第3首', url: 'assets/audio/liszt-consolation-3.mp3', duration: 226.429 },
+  { title: '瓦格纳《女武神的骑行》', url: 'assets/audio/wagner-valkyries.mp3', duration: 257.724 },
   { title: '李斯特《钟》La Campanella', url: 'assets/audio/liszt-la-campanella.mp3', duration: 372.219 },
+  { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3', duration: 300.024 },
 ];
 const audio = createPlayer(TRACKS, {
   onStatus(s) {

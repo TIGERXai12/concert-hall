@@ -35,3 +35,12 @@
 - Chopin — Étude Op. 10 No. 4 in C♯ minor — Edward Neeman (piano) — Public domain — https://commons.wikimedia.org/wiki/File:Chopin_-_12_Études,_Op._10_-_No._4_in_C-Sharp_minor_'Torrent'_(Edward_Neeman).flac
 - Liszt — Consolation No. 3, Lento placido — Piano: Benedict Kramer; recording: Tobias Lohner — **CC BY-SA 4.0** — https://commons.wikimedia.org/wiki/File:Franz_Liszt_-_Consolation_No._3,_Lento_placido.ogg (re-encoded to MP3; the MP3 is shared under the same CC BY-SA 4.0 license)
 - Bach — Cantata BWV 147, No. 10 "Jesus bleibet meine Freude" — Orchestra Gli Armonici — CC0 — https://commons.wikimedia.org/wiki/File:Bach,_BWV_147,_10._Jesus_bleibet_meine_Freude.ogg
+
+### v18 新增（20 首：钢琴主导 10 / 乐团主导 10；均截取前 5 分钟或全曲，96k MP3）
+- Grieg — Piano Concerto in A minor, Op. 16, I. Allegro molto moderato — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Edvard_Grieg_-_piano_concerto_in_a_minor,_op._16_-_i._allegro_molto_moderato.ogg
+- Mozart — Symphony No. 40 in G minor, K. 550, I. Molto allegro — Musopen Symphony Orchestra — Public domain — https://commons.wikimedia.org/wiki/File:Mozart_-_Symphony_No._40_in_G_minor,_K550_-_I._Molto_allegro_(Musopen_Symphony).flac
+- Tchaikovsky — Symphony No. 6 "Pathétique", Op. 74, III. Allegro molto vivace — Musopen Symphony Orchestra — Public domain — https://commons.wikimedia.org/wiki/File:Tchaikovsky_-_Symphony_No._6_in_B_minor,_Op._74_'Pathétique'_-_III._Allegro_molto_vivace_(Musopen_Symphony).flac
+- Mendelssohn — Symphony No. 4 "Italian", Op. 90, I. Allegro vivace — Musopen Symphony Orchestra — Public domain — https://commons.wikimedia.org/wiki/File:Mendelssohn_-_Symphony_No._4_in_A_major,_Op._90_'Italian'_-_I._Allegro_vivace_(Musopen_Symphony).flac
+- Mussorgsky — Night on Bald Mountain — Musopen (performer possibly Skidmore College Orchestra) — Public domain — https://commons.wikimedia.org/wiki/File:Modest_Mussorgsky_-_night_on_bald_mountain.ogg
+- Tchaikovsky — Swan Lake, extract from Act 2 — Ballet Française Symphony Orchestra — Public domain — https://commons.wikimedia.org/wiki/File:Peter_Ilyich_Tchaikovsky-_Swan_Lake-_Extract_from_Act_2.ogg
+- Wagner — Ride of the Valkyries (Die Walküre) — American Symphony Orchestra, Edison Records 1921 — Public domain (PD-Edison Records) — https://commons.wikimedia.org/wiki/File:Richard_Wagner_-_Ride_of_the_Valkyries.ogg (full piece)
