@@ -16,8 +16,23 @@ export function createProgramme(scene, tracks, livePos) {
   const paper = new THREE.MeshStandardMaterial({ color: 0xf4ecdc, roughness: 0.9 });
   const cover = new THREE.MeshStandardMaterial({ map: coverTexture(), roughness: 0.85 });
   const booklet = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.21, 0.008), [paper, paper, paper, paper, cover, paper]);
-  booklet.visible = false; booklet.name = 'programme';
-  scene.add(booklet);
+  booklet.name = 'programme';
+  // Seat-back pocket (covers lower half; title stays readable above it)
+  const pocketMat = new THREE.MeshStandardMaterial({ color: 0x4a1c20, roughness: 0.95 });
+  const pocket = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.12, 0.02), pocketMat);
+  pocket.position.set(0, -0.05, 0.012);
+  // Invisible, larger tap target for phones
+  const hit = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.34, 0.12),
+    new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, colorWrite: false }));
+  hit.name = 'programmeHit';
+  const stand = new THREE.Group();
+  const brass = new THREE.MeshStandardMaterial({ color: 0xb8913c, metalness: 0.7, roughness: 0.35 });
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.8, 6), brass); rod.position.set(0, -0.48, -0.03);
+  const lip = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.012, 0.03), brass); lip.position.set(0, -0.108, 0.01);
+  stand.add(rod, lip);
+  const holder = new THREE.Group(); holder.add(booklet, pocket, hit, stand); holder.visible = false;
+  scene.add(holder);
+  let allSeats = [];
 
   const ov = document.createElement('div'); ov.id = 'programme'; ov.className = 'hidden';
   ov.innerHTML = '<div class="pg-card"><div class="pg-h">节 目 单</div><div class="pg-sub">PROGRAMME</div><ol></ol><div class="pg-foot">轻触空白处关闭</div></div>';
@@ -33,17 +48,35 @@ export function createProgramme(scene, tracks, livePos) {
   function close() { ov.classList.add('hidden'); clearInterval(timer); }
   ov.addEventListener('click', (e) => { if (!e.target.closest('.pg-card')) close(); e.stopPropagation(); });
 
+  function frontSeatOf(seat, wp, fwd) {
+    const want = wp.clone().addScaledVector(fwd, 1.0); let best = null, bd = 0.45;
+    const p = new THREE.Vector3();
+    for (const o of allSeats) { if (o === seat) continue; o.getWorldPosition(p);
+      if (Math.abs(p.y - want.y) > 0.6) continue;
+      const d = Math.hypot(p.x - want.x, p.z - want.z); if (d < bd) { bd = d; best = o; } }
+    return best;
+  }
   function placeAtSeat(seat) {
-    if (!seat) { booklet.visible = false; return; }
+    if (!seat) { holder.visible = false; return; }
+    seat.updateWorldMatrix(true, false);
     const wp = new THREE.Vector3(); seat.getWorldPosition(wp);
     const q = new THREE.Quaternion(); seat.getWorldQuaternion(q);
     const fwd = new THREE.Vector3(0, 0, -1).applyQuaternion(q);
-    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(q);
-    booklet.position.copy(wp).addScaledVector(fwd, 0.6).addScaledVector(right, 0.2).add(new THREE.Vector3(0, 0.98, 0));
-    booklet.quaternion.copy(q);
-    booklet.rotateX(-1.1); booklet.rotateZ(0.25); // leaning back on the rail in front, facing the listener
-    booklet.visible = true;
+    const front = frontSeatOf(seat, wp, fwd);
+    holder.matrixAutoUpdate = true;
+    if (front) { // pocket on the back of the seat in front, cover facing us
+      front.updateWorldMatrix(true, false);
+      holder.position.set(0.13, 0.87, 0.272).applyMatrix4(front.matrixWorld);
+      front.getWorldQuaternion(holder.quaternion);
+      holder.rotateX(-0.06);
+      pocket.visible = true; stand.visible = false;
+    } else { // front row: small brass stand just ahead
+      holder.position.set(0.1, 0.9, -0.7).applyMatrix4(seat.matrixWorld);
+      holder.quaternion.copy(q); holder.rotateX(-0.45); stand.visible = true;
+      pocket.visible = false;
+    }
+    holder.visible = true;
   }
   const isOpen = () => !ov.classList.contains('hidden');
-  return { booklet, open, close, placeAtSeat, isOpen };
+  return { booklet: holder, open, close, placeAtSeat, isOpen, setSeats: (a) => { allSeats = a; } };
 }

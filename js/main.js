@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=9';
-import { buildOrchestra } from './orchestra.js?v=9';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=9';
-import { createPresence } from './presence.js?v=9';
-import { createPlayer } from './player.js?v=9';
-import { createProgramme } from './programme.js?v=9';
-import { createControls } from './controls.js?v=9';
+import { buildHall, addCurtains } from './hall.js?v=10';
+import { buildOrchestra } from './orchestra.js?v=10';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=10';
+import { createPresence } from './presence.js?v=10';
+import { createPlayer } from './player.js?v=10';
+import { createProgramme } from './programme.js?v=10';
+import { createControls } from './controls.js?v=10';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -73,13 +73,14 @@ audio.updateForSeat = (eye) => {
 
 const raycaster = new THREE.Raycaster();
 const programme = createProgramme(scene, TRACKS, () => audio.livePos());
+programme.setSeats(seats);
 // Tap the booklet → open programme (captures before seat logic)
 window.addEventListener('click', (e) => {
   if (!programme.booklet.visible || programme.isOpen()) return;
   const v = document.pointerLockElement ? new THREE.Vector2(0, 0)
     : new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(v, camera);
-  const hit = raycaster.intersectObject(programme.booklet, false);
+  const hit = raycaster.intersectObject(programme.booklet, true);
   if (hit.length && hit[0].distance < 3) { e.stopImmediatePropagation(); e.preventDefault(); programme.open(); }
 }, true);
 const pointer = new THREE.Vector2();
