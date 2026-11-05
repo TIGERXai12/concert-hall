@@ -52,7 +52,7 @@ export function createProgramme(scene, tracks, livePos) {
     const want = wp.clone().addScaledVector(fwd, 1.0); let best = null, bd = 0.45;
     const p = new THREE.Vector3();
     for (const o of allSeats) { if (o === seat) continue; o.getWorldPosition(p);
-      if (Math.abs(p.y - want.y) > 0.6) continue;
+      if (Math.abs(p.y - want.y) > 0.6 || Math.abs(Math.sin(o.rotation.y - seat.rotation.y)) > 0.1 || Math.cos(o.rotation.y - seat.rotation.y) < 0) continue;
       const d = Math.hypot(p.x - want.x, p.z - want.z); if (d < bd) { bd = d; best = o; } }
     return best;
   }

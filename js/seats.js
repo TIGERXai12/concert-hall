@@ -48,14 +48,14 @@ export function buildSeats(scene) {
   placeBlock(add, {
     floor: '一楼', section: 'D区',
     rows: 5, cols: 5, seatPitch: 0.8, rowPitch: 1.0,
-    originX: -11.5, originZ: 0.5, originY: 1.4, rake: 0.12,
+    originX: -11.5, originZ: 0.5, originY: 1.4, rake: 0.3,
     yaw: Math.PI / 2.4,
   groundY: 0, parapet: true, backExtra: 1.2,
   });
   placeBlock(add, {
     floor: '一楼', section: 'F区',
     rows: 5, cols: 5, seatPitch: 0.8, rowPitch: 1.0,
-    originX: 11.5, originZ: 0.5, originY: 1.4, rake: 0.12,
+    originX: 11.5, originZ: 0.5, originY: 1.4, rake: 0.3,
     yaw: -Math.PI / 2.4,
   groundY: 0, parapet: true, backExtra: 1.2,
   });
@@ -85,14 +85,14 @@ export function buildSeats(scene) {
   placeBlock(add, {
     floor: '二楼', section: 'L区',
     rows: 3, cols: 6, seatPitch: 0.78, rowPitch: 0.95,
-    originX: -12.2, originZ: 0, originY: 6.0, rake: 0.08,
+    originX: -12.2, originZ: 0, originY: 6.0, rake: 0.35,
     yaw: Math.PI / 2.2,
   groundY: 5.2, parapet: true, backExtra: 1.5, soffit: true,
   });
   placeBlock(add, {
     floor: '二楼', section: 'R区',
     rows: 3, cols: 6, seatPitch: 0.78, rowPitch: 0.95,
-    originX: 12.2, originZ: 0, originY: 6.0, rake: 0.08,
+    originX: 12.2, originZ: 0, originY: 6.0, rake: 0.35,
     yaw: -Math.PI / 2.2,
   groundY: 5.2, parapet: true, backExtra: 1.5, soffit: true,
   });
@@ -118,14 +118,14 @@ export function buildSeats(scene) {
   placeBlock(add, {
     floor: '三楼', section: 'L区',
     rows: 2, cols: 5, seatPitch: 0.75, rowPitch: 0.9,
-    originX: -12.8, originZ: 1, originY: 10.55, rake: 0.1,
+    originX: -12.8, originZ: 1, originY: 10.55, rake: 0.35,
     yaw: Math.PI / 2.15,
   groundY: 9.75, parapet: true, backExtra: 1.5, soffit: true,
   });
   placeBlock(add, {
     floor: '三楼', section: 'R区',
     rows: 2, cols: 5, seatPitch: 0.75, rowPitch: 0.9,
-    originX: 12.8, originZ: 1, originY: 10.55, rake: 0.1,
+    originX: 12.8, originZ: 1, originY: 10.55, rake: 0.35,
     yaw: -Math.PI / 2.15,
   groundY: 9.75, parapet: true, backExtra: 1.5, soffit: true,
   });
@@ -134,7 +134,20 @@ export function buildSeats(scene) {
   return { group, seats };
 }
 
+export const STAGE_FOCUS = new THREE.Vector3(0.5, 1.5, 1.5); // between conductor & piano
+
+/** Keep the block footprint, but make it face the stage: front row nearest the stage, backrests away. */
+function orientToStage(o) {
+  const yaw0 = o.yaw || 0, depth = (o.rows - 1) * o.rowPitch;
+  const cx = o.originX + (depth / 2) * Math.sin(yaw0), cz = o.originZ + (depth / 2) * Math.cos(yaw0);
+  const dx = STAGE_FOCUS.x - cx, dz = STAGE_FOCUS.z - cz, L = Math.hypot(dx, dz);
+  if (-Math.sin(yaw0) * dx / L - Math.cos(yaw0) * dz / L > 0.5) return o; // already faces stage
+  const yaw = Math.atan2(-dx, -dz);
+  return { ...o, yaw, originX: cx - (depth / 2) * Math.sin(yaw), originZ: cz - (depth / 2) * Math.cos(yaw) };
+}
+
 function placeBlock(add, opts) {
+  opts = orientToStage(opts);
   buildRisers(add.group, opts);
   const {
     floor, section, rows, cols, seatPitch, rowPitch,
@@ -165,7 +178,7 @@ function placeBlock(add, opts) {
       const wx = originX + localX * cos + localZ * sin;
       const wz = originZ - localX * sin + localZ * cos;
       seat.position.set(wx, originY + localY, wz);
-      seat.rotation.y = yaw;
+      seat.rotation.y = Math.atan2(-(STAGE_FOCUS.x - wx), -(STAGE_FOCUS.z - wz)); // each seat fans toward the stage
       add(seat);
     }
   }
@@ -237,7 +250,7 @@ export function getSeatCameraPose(seat) {
   const eye = wp.clone()
     .add(new THREE.Vector3(0, 1.12, 0))
     .addScaledVector(facing, 0.12);
-  const target = new THREE.Vector3(0, 2.4, -1);
+  const target = new THREE.Vector3(STAGE_FOCUS.x, 2.2, STAGE_FOCUS.z - 1);
   return { eye, target };
 }
 
