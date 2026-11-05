@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=4';
-import { buildOrchestra } from './orchestra.js?v=4';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=4';
-import { buildAudience } from './audience.js?v=4';
-import { createPlayer } from './player.js?v=4';
-import { createControls } from './controls.js?v=4';
+import { buildHall, addCurtains } from './hall.js?v=5';
+import { buildOrchestra } from './orchestra.js?v=5';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=5';
+import { buildAudience } from './audience.js?v=5';
+import { createPlayer } from './player.js?v=5';
+import { createControls } from './controls.js?v=5';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');

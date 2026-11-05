@@ -18,6 +18,7 @@ export function buildSeats(scene) {
   const seats = [];
 
   const add = (seat) => { group.add(seat); seats.push(seat); };
+  add.group = group;
 
   // ========== 1F main blocks facing stage (+z) ==========
   // B = center, A = house-left, C = house-right (audience facing stage)
@@ -26,18 +27,21 @@ export function buildSeats(scene) {
     rows: 8, cols: 10, seatPitch: 0.78, rowPitch: 1.05,
     originX: 0, originZ: 6.2, originY: 0.05, rake: 0.09,
     centerAisle: 1.0,
+  groundY: 0,
   });
   placeBlock(add, {
     floor: '一楼', section: 'A区',
     rows: 7, cols: 7, seatPitch: 0.78, rowPitch: 1.05,
     originX: -7.8, originZ: 6.5, originY: 0.08, rake: 0.09,
     yaw: 0.12,
+  groundY: 0,
   });
   placeBlock(add, {
     floor: '一楼', section: 'C区',
     rows: 7, cols: 7, seatPitch: 0.78, rowPitch: 1.05,
     originX: 7.8, originZ: 6.5, originY: 0.08, rake: 0.09,
     yaw: -0.12,
+  groundY: 0,
   });
 
   // 1F side vineyard terraces (D left / F right) — angled toward stage
@@ -46,12 +50,14 @@ export function buildSeats(scene) {
     rows: 5, cols: 5, seatPitch: 0.8, rowPitch: 1.0,
     originX: -11.5, originZ: 0.5, originY: 1.4, rake: 0.12,
     yaw: Math.PI / 2.4,
+  groundY: 0, parapet: true, backExtra: 1.2,
   });
   placeBlock(add, {
     floor: '一楼', section: 'F区',
     rows: 5, cols: 5, seatPitch: 0.8, rowPitch: 1.0,
     originX: 11.5, originZ: 0.5, originY: 1.4, rake: 0.12,
     yaw: -Math.PI / 2.4,
+  groundY: 0, parapet: true, backExtra: 1.2,
   });
 
   // ========== 2F rear balcony ==========
@@ -60,16 +66,19 @@ export function buildSeats(scene) {
     rows: 4, cols: 14, seatPitch: 0.75, rowPitch: 0.95,
     originX: 0, originZ: 12.2, originY: 6.7, rake: 0.12,
     centerAisle: 0.9,
+  groundY: 5.9, parapet: true, backExtra: 2.5, soffit: true,
   });
   placeBlock(add, {
     floor: '二楼', section: 'A区',
     rows: 3, cols: 6, seatPitch: 0.75, rowPitch: 0.95,
     originX: -9.5, originZ: 12.5, originY: 6.75, rake: 0.12,
+  groundY: 5.9, parapet: true, backExtra: 2.2, soffit: true,
   });
   placeBlock(add, {
     floor: '二楼', section: 'C区',
     rows: 3, cols: 6, seatPitch: 0.75, rowPitch: 0.95,
     originX: 9.5, originZ: 12.5, originY: 6.75, rake: 0.12,
+  groundY: 5.9, parapet: true, backExtra: 2.2, soffit: true,
   });
 
   // 2F side balconies L / R
@@ -78,12 +87,14 @@ export function buildSeats(scene) {
     rows: 3, cols: 6, seatPitch: 0.78, rowPitch: 0.95,
     originX: -12.2, originZ: 0, originY: 6.0, rake: 0.08,
     yaw: Math.PI / 2.2,
+  groundY: 5.2, parapet: true, backExtra: 1.5, soffit: true,
   });
   placeBlock(add, {
     floor: '二楼', section: 'R区',
     rows: 3, cols: 6, seatPitch: 0.78, rowPitch: 0.95,
     originX: 12.2, originZ: 0, originY: 6.0, rake: 0.08,
     yaw: -Math.PI / 2.2,
+  groundY: 5.2, parapet: true, backExtra: 1.5, soffit: true,
   });
 
   // ========== 2F P choir seats (behind stage, facing conductor/orchestra) ==========
@@ -93,6 +104,7 @@ export function buildSeats(scene) {
     originX: 0, originZ: -7.5, originY: 2.85, rake: 0.45,
     yaw: Math.PI, // face toward stage / audience
     centerAisle: 0.7,
+  groundY: 0, parapet: true, backExtra: 0.8,
   });
 
   // ========== 3F upper ==========
@@ -101,18 +113,21 @@ export function buildSeats(scene) {
     rows: 3, cols: 12, seatPitch: 0.72, rowPitch: 0.9,
     originX: 0, originZ: 14.5, originY: 11.4, rake: 0.14,
     centerAisle: 0.85,
+  groundY: 10.6, parapet: true, backExtra: 2.5, soffit: true,
   });
   placeBlock(add, {
     floor: '三楼', section: 'L区',
     rows: 2, cols: 5, seatPitch: 0.75, rowPitch: 0.9,
     originX: -12.8, originZ: 1, originY: 10.55, rake: 0.1,
     yaw: Math.PI / 2.15,
+  groundY: 9.75, parapet: true, backExtra: 1.5, soffit: true,
   });
   placeBlock(add, {
     floor: '三楼', section: 'R区',
     rows: 2, cols: 5, seatPitch: 0.75, rowPitch: 0.9,
     originX: 12.8, originZ: 1, originY: 10.55, rake: 0.1,
     yaw: -Math.PI / 2.15,
+  groundY: 9.75, parapet: true, backExtra: 1.5, soffit: true,
   });
 
   scene.add(group);
@@ -120,6 +135,7 @@ export function buildSeats(scene) {
 }
 
 function placeBlock(add, opts) {
+  buildRisers(add.group, opts);
   const {
     floor, section, rows, cols, seatPitch, rowPitch,
     originX, originZ, originY, rake = 0, yaw = 0, centerAisle = 0,
@@ -226,3 +242,47 @@ export function getSeatCameraPose(seat) {
 }
 
 export { SEAT_IDLE, SEAT_HOVER };
+
+const CARPET = new THREE.MeshStandardMaterial({ color: 0x7a2a2e, roughness: 0.95 });
+const WOODM = new THREE.MeshStandardMaterial({ color: 0xb98a5a, roughness: 0.7 });
+const WOODD = new THREE.MeshStandardMaterial({ color: 0x8a6240, roughness: 0.75 });
+/** Solid stepped terrace under each row (tread + riser filled down to groundY), parapet & soffit. */
+function buildRisers(group, o) {
+  const { rows, cols, seatPitch, rowPitch, originX, originZ, originY, rake = 0, yaw = 0,
+    centerAisle = 0, groundY = 0, parapet = false, backExtra = 0, soffit = false } = o;
+  const halfW = centerAisle > 0
+    ? centerAisle / 2 + 0.35 + (cols / 2 - 1) * seatPitch + 0.55
+    : ((cols - 1) / 2) * seatPitch + 0.55;
+  const W = halfW * 2;
+  const blk = new THREE.Group();
+  blk.position.set(originX, 0, originZ);
+  blk.rotation.y = yaw;
+  const box = (w, h, d, x, y, z, m) => {
+    if (h <= 0.001) return;
+    const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+    b.position.set(x, y, z); b.receiveShadow = true; blk.add(b);
+  };
+  const front = -rowPitch / 2 - 0.15;
+  for (let r = 0; r < rows; r++) {
+    const top = originY + r * rake;
+    const z0 = r === 0 ? front : r * rowPitch - rowPitch / 2;
+    const z1 = r === rows - 1 ? r * rowPitch + rowPitch / 2 + backExtra : r * rowPitch + rowPitch / 2;
+    const h = top - groundY;
+    box(W, Math.max(h - 0.04, 0.02), z1 - z0, 0, groundY + (h - 0.04) / 2, (z0 + z1) / 2, WOODD);
+    box(W, 0.04, z1 - z0, 0, top - 0.02, (z0 + z1) / 2, CARPET);           // carpet tread
+    box(W + 0.02, Math.min(rake, h) + 0.01, 0.03, 0, top - Math.min(rake, h) / 2, z0 - 0.005, WOODM); // riser face
+  }
+  const lastTop = originY + (rows - 1) * rake;
+  const backZ = (rows - 1) * rowPitch + rowPitch / 2 + backExtra;
+  if (parapet) {
+    box(W + 0.1, 0.85, 0.12, 0, originY + 0.42, front - 0.06, WOODM);       // front parapet
+    box(W + 0.16, 0.06, 0.2, 0, originY + 0.87, front - 0.06, WOODD);       // rail cap
+    // side end walls (stringers) following the steps
+    for (const sx of [-1, 1]) box(0.12, lastTop - groundY + 0.85, backZ - front, sx * (W / 2 + 0.06), groundY + (lastTop - groundY + 0.85) / 2, (front + backZ) / 2, WOODM);
+  }
+  if (soffit) {
+    box(W + 0.24, 0.5, 0.14, 0, groundY - 0.25, front - 0.06, WOODM);       // fascia below parapet
+    box(W + 0.24, 0.1, backZ - front, 0, groundY - 0.5, (front + backZ) / 2, WOODD); // soffit
+  }
+  group.add(blk);
+}
