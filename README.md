@@ -25,7 +25,7 @@ python3 -m http.server 8765
 - 音乐用 HTMLAudioElement 流式播放（边下边播，兼容 iOS/微信）。
 
 ## 改曲目单
-编辑 `js/main.js` 里的 `TRACKS` 数组（title + url），把 mp3 放进 `assets/audio/`。按数组顺序播放，播完循环；观众不能切歌，也没有任何播放按钮：点「进入」即自动开始。改完把 index.html / main.js 里的 `?v=3` 加一，防手机缓存。
+编辑 `js/main.js` 里的 `TRACKS` 数组（title + url + duration 秒，用 ffprobe 量），把 mp3 放进 `assets/audio/`。按数组顺序播放，播完循环；观众不能切歌，也没有任何播放按钮：点「进入」即自动开始。改完把 index.html / main.js 里的 `?v=N` 加一，防手机缓存。
 
 ## 截图
 

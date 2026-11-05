@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=3';
-import { buildOrchestra } from './orchestra.js?v=3';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=3';
-import { buildAudience } from './audience.js?v=3';
-import { createPlayer } from './player.js?v=3';
-import { createControls } from './controls.js?v=3';
+import { buildHall, addCurtains } from './hall.js?v=4';
+import { buildOrchestra } from './orchestra.js?v=4';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=4';
+import { buildAudience } from './audience.js?v=4';
+import { createPlayer } from './player.js?v=4';
+import { createControls } from './controls.js?v=4';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -47,10 +47,10 @@ const controls = createControls(camera, canvas, {
 
 // ===== 曲目单（由主人决定，观众只听）：按顺序播放，播完循环。改这里即可 =====
 const TRACKS = [
-  { title: '拉赫玛尼诺夫《第二钢琴协奏曲》第一乐章', url: 'assets/audio/rachmaninoff-pc2-i.mp3' },
-  { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3' },
-  { title: '贝多芬《第五交响曲·命运》第一乐章', url: 'assets/audio/beethoven-sym5-i.mp3' },
-  { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3' },
+  { title: '拉赫玛尼诺夫《第二钢琴协奏曲》第一乐章', url: 'assets/audio/rachmaninoff-pc2-i.mp3', duration: 300.024 },
+  { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3', duration: 300.042 },
+  { title: '贝多芬《第五交响曲·命运》第一乐章', url: 'assets/audio/beethoven-sym5-i.mp3', duration: 300.024 },
+  { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3', duration: 300.024 },
 ];
 const audio = createPlayer(TRACKS, {
   onStatus(s) {
