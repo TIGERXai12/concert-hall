@@ -51,10 +51,12 @@ export function createAudioSystem(camera, listenerParent) {
     buffer = await new Promise((resolve, reject) => {
       audioLoader.load(url, resolve, undefined, reject);
     });
+    const wasPlaying = playing;
     for (const s of sources) {
       if (s.pa.isPlaying) s.pa.stop();
       s.pa.setBuffer(buffer);
     }
+    if (wasPlaying) { for (const s of sources) s.pa.play(); }
     return buffer;
   }
 

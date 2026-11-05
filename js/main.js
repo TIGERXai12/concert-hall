@@ -48,9 +48,23 @@ const controls = createControls(camera, canvas, {
 
 const audio = createAudioSystem(camera, camera);
 audio.attachToScene(scene);
-audio.load('assets/audio/placeholder.mp3').catch((e) => {
-  console.warn('音频占位加载失败（可稍后替换曲目）', e);
-});
+const TRACKS = [
+  { title: '拉赫玛尼诺夫《第二钢琴协奏曲》第一乐章', url: 'assets/audio/rachmaninoff-pc2-i.mp3' },
+  { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3' },
+  { title: '贝多芬《第五交响曲·命运》第一乐章', url: 'assets/audio/beethoven-sym5-i.mp3' },
+  { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3' },
+];
+let trackIdx = 0;
+const trackTitle = document.getElementById('trackTitle');
+async function loadTrack(i) {
+  trackIdx = (i + TRACKS.length) % TRACKS.length;
+  trackTitle.textContent = '加载中… ' + TRACKS[trackIdx].title;
+  try { await audio.load(TRACKS[trackIdx].url); trackTitle.textContent = '♫ ' + TRACKS[trackIdx].title; }
+  catch (e) { console.warn('曲目加载失败', e); trackTitle.textContent = '加载失败，请换一首'; }
+}
+loadTrack(0);
+document.getElementById('prevBtn').addEventListener('click', (e) => { e.stopPropagation(); loadTrack(trackIdx - 1); });
+document.getElementById('nextBtn').addEventListener('click', (e) => { e.stopPropagation(); loadTrack(trackIdx + 1); });
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();

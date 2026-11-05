@@ -17,3 +17,9 @@
 
 ## 依赖
 - Three.js r170（本地 `vendor/three/three.module.js`）
+
+## Music (all from Wikimedia Commons, Musopen recordings; trimmed to first 5 min, re-encoded 128k MP3)
+- Rachmaninoff — Piano Concerto No. 2, Op. 18, I. Moderato — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Sergei_Rachmaninoff_-_piano_concerto_no._2_in_c_minor,_op._18_-_i._moderato.ogg
+- Tchaikovsky — Piano Concerto No. 1, Op. 23, I. Allegro — Musopen — CC0 — https://commons.wikimedia.org/wiki/File:Tchaikovsky,_Concerto_No.1_in_B-flat_minor_Op.23,_I._Allegro.ogg
+- Beethoven — Symphony No. 5, Op. 67, I. Allegro con brio — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Ludwig_van_Beethoven_-_symphony_no._5_in_c_minor,_op._67_-_i._allegro_con_brio.ogg
+- Dvořák — Symphony No. 9 "From the New World", Op. 95, IV. Allegro con fuoco — Musopen — Public domain — https://commons.wikimedia.org/wiki/File:Antonin_Dvorak_-_symphony_no._9_in_e_minor_'from_the_new_world',_op._95_-_iv._allegro_con_fuoco.ogg
