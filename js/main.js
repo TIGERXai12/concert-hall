@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { buildHall, addCurtains } from './hall.js';
 import { buildOrchestra } from './orchestra.js';
 import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js';
+import { buildAudience } from './audience.js';
 import { createAudioSystem } from './audio.js';
 import { createControls } from './controls.js';
 
@@ -38,6 +39,7 @@ buildHall(scene);
 addCurtains(scene);
 const { animators } = buildOrchestra(scene);
 const { seats } = buildSeats(scene);
+const audience = buildAudience(scene, seats);
 
 const controls = createControls(camera, canvas, {
   speed: 4.8,
@@ -89,8 +91,9 @@ function hidePrompt() {
 
 function sitIn(seat) {
   if (!seat || seat.userData.occupied) return;
-  if (currentSeat) setSeatOccupied(currentSeat, false);
+  if (currentSeat) { setSeatOccupied(currentSeat, false); audience.setSeatFree(currentSeat, false); }
   currentSeat = seat;
+  audience.setSeatFree(seat, true);
   setSeatOccupied(seat, true);
   setSeatHover(hoveredSeat, false);
   hoveredSeat = null;
@@ -118,6 +121,7 @@ function standUp() {
   else if (floorName.startsWith('三楼')) eyeY = Math.max(pos.y + 1.2, 11.2);
   else eyeY = Math.max(pos.y + 1.25, 1.7);
   setSeatOccupied(currentSeat, false);
+  audience.setSeatFree(currentSeat, false);
   currentSeat = null;
   controls.setSeated(false);
   const forward = new THREE.Vector3(Math.sin(seatYaw), 0, Math.cos(seatYaw));
@@ -228,10 +232,11 @@ function tick() {
   controls.update(dt);
   const playing = audio.isPlaying();
   for (const fn of animators) fn(t, playing);
+  audience.update(t, playing);
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
 tick();
 
 // Expose for debugging / screenshot automation
-window.__hall = { scene, camera, renderer, seats, sitIn, standUp, audio, controls };
+window.__hall = { scene, camera, renderer, seats, audience, sitIn, standUp, audio, controls };
