@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=15';
-import { buildOrchestra } from './orchestra.js?v=15';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=15';
-import { createPresence } from './presence.js?v=15';
-import { makeChibi } from './audience.js?v=15';
-import { createPlayer } from './player.js?v=15';
-import { createProgramme } from './programme.js?v=15';
-import { createControls } from './controls.js?v=15';
+import { buildHall, addCurtains } from './hall.js?v=16';
+import { buildOrchestra } from './orchestra.js?v=16';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=16';
+import { createPresence } from './presence.js?v=16';
+import { makeChibi } from './audience.js?v=16';
+import { createPlayer } from './player.js?v=16';
+import { createProgramme } from './programme.js?v=16';
+import { createControls } from './controls.js?v=16';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -194,11 +194,12 @@ function standUp() {
   controls.setSeated(false);
   let eye;
   if ((seat.userData.floor || '').startsWith('一楼') && pos.y < 2.5) {
-    Object.assign(WALK, FLOOR_BOUNDS);
+    Object.assign(WALK, FLOOR_BOUNDS); curLevel = 0;
     eye = new THREE.Vector3(pos.x, 1.7, pos.z);
   } else {
     // Balconies / choir / 3F: stay on this level, walk within its section
-    Object.assign(WALK, sectionBounds(seat), { minY: pos.y + 1.5 });
+    Object.assign(WALK, sectionBounds(seat), { minY: pos.y + 1.5 }); curLevel = -1;
+    LEVELS.forEach((L, i) => { if (i && L.name === seat.userData.floor && seat.userData.section === 'L区') curLevel = i; });
     eye = new THREE.Vector3(pos.x, pos.y + 1.5, pos.z);
   }
   eye.x = THREE.MathUtils.clamp(eye.x, WALK.minX, WALK.maxX);
@@ -304,13 +305,13 @@ const colliders = [hallRoot];
 seatsGroup.children.forEach((c) => { if (!c.userData?.isSeat && c.name !== 'seat') colliders.push(c); });
 const tpRay = new THREE.Raycaster();
 const _f = new THREE.Vector3(), _head = new THREE.Vector3(), _want = new THREE.Vector3(), _q = new THREE.Quaternion();
-let walkPhase = 0, tpDist = 2.4;
+let walkPhase = 0, tpDist = 2.4; const tpPos = new THREE.Vector3();
 function thirdPerson(dt) {
   if (!started) return;
   me.visible = true;
   const zoom = THREE.MathUtils.clamp(camera.fov / 65, 0.55, 1.3);
   if (currentSeat) {
-    me.userData.setPose('sit'); setMeOpacity(0.3); me.scale.setScalar(0.8); // ghosted so it never hides the stage or booklet
+    me.userData.setPose('sit'); setMeOpacity(0.6); me.scale.setScalar(0.8); // ghosted so it never hides the stage or booklet
     currentSeat.getWorldPosition(me.position);
     currentSeat.getWorldQuaternion(me.quaternion);
     me.userData.legs[0].rotation.x = me.userData.legs[1].rotation.x = 0;
@@ -335,14 +336,16 @@ function thirdPerson(dt) {
   const back = (currentSeat ? 1.7 : tpDist) * zoom, up = currentSeat ? 1.05 : 1.1;
   _want.copy(_head).addScaledVector(_f, -back); _want.y += up;
   if (currentSeat) { // over the right shoulder so the head doesn't block the stage
-    _want.x += -_f.z * 0.3; _want.z += _f.x * 0.3;
+    _want.x += -_f.z * 0.0; _want.z += _f.x * 0.0;
   }
   // pull in on collision
   const dir = _want.clone().sub(_head); const L = dir.length(); dir.normalize();
   tpRay.set(_head, dir); tpRay.far = L;
   const hit = currentSeat ? null : tpRay.intersectObjects(colliders, true)[0];
   if (hit) _want.copy(_head).addScaledVector(dir, Math.max(0.2, hit.distance - 0.2));
-  if (Number.isNaN(lastTP.x)) camera.position.copy(_want); else camera.position.lerp(_want, Math.min(1, dt * 12));
+  // smooth in a persistent vector (camera.position was reset to eye this frame, so lerping it caused dt-dependent shake)
+  if (Number.isNaN(lastTP.x) || tpPos.distanceTo(_want) > 6) tpPos.copy(_want); else tpPos.lerp(_want, 1 - Math.exp(-dt * 10));
+  camera.position.copy(tpPos);
   camera.rotation.x -= currentSeat ? 0.3 : 0.2; // look slightly down onto the avatar
   camera.updateMatrixWorld();
   lastTP.copy(camera.position);
@@ -361,14 +364,82 @@ function tick() {
   for (const fn of animators) fn(t, playing);
   presence.update(t);
   thirdPerson(dt);
+  if (typeof checkPortals === 'function' && portals.length) checkPortals(t);
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
+
+// ===== Stairs: glowing portals linking 1F <-> 2F(L区) <-> 3F(L区) =====
+const fadeEl = Object.assign(document.createElement('div'), { id: 'fade' });
+fadeEl.style.cssText = 'position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .35s;z-index:40';
+document.body.appendChild(fadeEl);
+function levelOf(floor, section) {
+  const ref = seats.find((x) => x.userData.floor === floor && x.userData.section === section);
+  const b = sectionBounds(ref); let y = 0; const p = new THREE.Vector3(); let n = 0;
+  for (const x of seats) if (x.userData.floor === floor && x.userData.section === section) { x.getWorldPosition(p); y += p.y; n++; }
+  return { name: floor, bounds: { ...b, minY: y / n + 1.5 }, y: y / n + 1.5 };
+}
+const LEVELS = [
+  { name: '一楼', bounds: FLOOR_BOUNDS, y: 1.7 },
+  levelOf('二楼', 'L区'),
+  levelOf('三楼', 'L区'),
+];
+function labelSprite(txt) {
+  const c = document.createElement('canvas'); c.width = 256; c.height = 96; const g = c.getContext('2d');
+  g.fillStyle = 'rgba(40,24,8,.75)'; g.fillRect(0, 0, 256, 96); g.fillStyle = '#ffd98a'; g.font = 'bold 44px sans-serif';
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(txt, 128, 50);
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(c), depthTest: false }));
+  sp.scale.set(1.1, 0.42, 1); return sp;
+}
+const portals = [];
+function addPortal(from, to, x, z, txt) {
+  const L = LEVELS[from], g = new THREE.Group();
+  const col = new THREE.Mesh(new THREE.CylinderGeometry(0.55, 0.55, 2.2, 24, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0xffc860, transparent: true, opacity: 0.35, side: THREE.DoubleSide, depthWrite: false }));
+  col.position.y = 1.1; const ring = new THREE.Mesh(new THREE.RingGeometry(0.4, 0.6, 32), new THREE.MeshBasicMaterial({ color: 0xffd98a, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03;
+  const lab = labelSprite(txt); lab.position.y = 2.5; g.add(col, ring, lab);
+  g.position.set(x, L.y - 1.7, z); scene.add(g);
+  const P = { from, to, pos: new THREE.Vector3(x, 0, z), mesh: g, col }; portals.push(P); return P;
+}
+// 1F: back-left corner; balcony levels: their two ends
+{
+  const b1 = LEVELS[1].bounds, b2 = LEVELS[2].bounds, cx1 = (b1.minX + b1.maxX) / 2, cx2 = (b2.minX + b2.maxX) / 2;
+  addPortal(0, 1, -12.5, 17.5, '上二楼 ↑');
+  addPortal(1, 0, cx1, b1.maxZ - 0.3, '下一楼 ↓');
+  addPortal(1, 2, cx1, b1.minZ + 0.3, '上三楼 ↑');
+  addPortal(2, 1, cx2, b2.maxZ - 0.3, '下二楼 ↓');
+}
+let curLevel = 0, portalArmed = true, transiting = false;
+function setLevel(i) { curLevel = i; Object.assign(WALK, LEVELS[i].bounds); }
+function goPortal(P) {
+  transiting = true; fadeEl.style.opacity = '1';
+  setTimeout(() => {
+    const back = portals.find((q) => q.from === P.to && q.to === P.from);
+    setLevel(P.to);
+    const B = LEVELS[P.to].bounds, c = new THREE.Vector3((B.minX + B.maxX) / 2, 0, (B.minZ + B.maxZ) / 2);
+    const d = c.clone().sub(back.pos); d.y = 0; d.normalize();
+    const e = back.pos.clone().addScaledVector(d, 2.0); e.y = LEVELS[P.to].y;
+    e.x = THREE.MathUtils.clamp(e.x, B.minX, B.maxX); e.z = THREE.MathUtils.clamp(e.z, B.minZ, B.maxZ);
+    camera.position.copy(e); controls.lookAt(e, new THREE.Vector3(STAGE_FOCUS.x, e.y - 0.6, STAGE_FOCUS.z)); camera.position.copy(e);
+    audio.updateForSeat(e); portalArmed = false;
+    fadeEl.style.opacity = '0'; setTimeout(() => { transiting = false; }, 1500);
+  }, 380);
+}
+function checkPortals(t) {
+  for (const P of portals) P.col.material.opacity = 0.28 + 0.12 * Math.sin(t * 3);
+  if (currentSeat || transiting) return;
+  let inside = false;
+  for (const P of portals) {
+    if (P.from !== curLevel) continue;
+    if (Math.hypot(eye.x - P.pos.x, eye.z - P.pos.z) < 0.7) { inside = true; if (portalArmed) { goPortal(P); return; } }
+  }
+  if (!inside) portalArmed = true;
+}
 tick();
-;
 
 // Expose for debugging / screenshot automation
-window.__hall = { me, getEye: () => eye, programme, scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };
+window.__hall = { portals, getLevel: () => curLevel, me, getEye: () => eye, programme, scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };
 
 // ===== Pinch / wheel zoom: adjusts field of view only (35°–85°, smoothed) =====
 let fovTarget = camera.fov;

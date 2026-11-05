@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { STAGE_FOCUS } from './seats.js?v=16';
 // In-world printed programme (节目单) resting in front of the seated listener.
 function coverTexture() {
   const c = document.createElement('canvas'); c.width = 256; c.height = 360;
@@ -67,14 +68,19 @@ export function createProgramme(scene, tracks, livePos) {
     holder.matrixAutoUpdate = true;
     if (front) { // pocket on the back of the seat in front, cover facing us
       front.updateWorldMatrix(true, false);
-      holder.position.set(0.0, 0.87, 0.272).applyMatrix4(front.matrixWorld);
+      // slide along the seat-back row so it lies on the line of sight to the stage
+      const inv = new THREE.Matrix4().copy(front.matrixWorld).invert();
+      const a = wp.clone().applyMatrix4(inv), f = STAGE_FOCUS.clone().applyMatrix4(inv);
+      let lx = 0; if (Math.abs(f.z - a.z) > 1e-3) lx = a.x + (f.x - a.x) * (0.272 - a.z) / (f.z - a.z);
+      lx = THREE.MathUtils.clamp(lx, -0.9, 0.9);
+      holder.position.set(lx, 0.82, 0.272).applyMatrix4(front.matrixWorld);
       front.getWorldQuaternion(holder.quaternion);
       holder.rotateX(-0.06);
       pocket.visible = true; stand.visible = false;
     } else { // front row: small brass stand just ahead
       // Short brass easel resting on the parapet rail cap (top ≈ +0.90 above row-1 floor)
       const onRail = seat.userData.parapet;
-      holder.position.set(0.1, onRail ? 1.07 : 0.62, -0.66).applyMatrix4(seat.matrixWorld);
+      holder.position.set(0.1, onRail ? 1.07 : 0.95, onRail ? -0.66 : -0.85).applyMatrix4(seat.matrixWorld);
       holder.quaternion.copy(q); holder.rotateX(-0.25); stand.visible = true;
       pocket.visible = false;
     }
