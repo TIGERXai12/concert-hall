@@ -30,6 +30,7 @@ export function createControls(camera, domElement, options = {}) {
   // Pointer lock look (desktop)
   domElement.addEventListener('click', () => {
     if (!state.enabled || state.seated) return;
+    if (('ontouchstart' in window) || navigator.maxTouchPoints > 0) return; // no pointer lock on touch
     if (document.pointerLockElement !== domElement) {
       domElement.requestPointerLock?.();
     }
@@ -126,7 +127,7 @@ export function createControls(camera, domElement, options = {}) {
     }
 
     // Show joystick on coarse pointers
-    if (window.matchMedia('(pointer: coarse)').matches) {
+    if (('ontouchstart' in window) || navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches) {
       joystick?.classList.remove('hidden');
     }
   }

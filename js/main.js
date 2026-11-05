@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=13';
-import { buildOrchestra } from './orchestra.js?v=13';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=13';
-import { createPresence } from './presence.js?v=13';
-import { makeChibi } from './audience.js?v=13';
-import { createPlayer } from './player.js?v=13';
-import { createProgramme } from './programme.js?v=13';
-import { createControls } from './controls.js?v=13';
+import { buildHall, addCurtains } from './hall.js?v=14';
+import { buildOrchestra } from './orchestra.js?v=14';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=14';
+import { createPresence } from './presence.js?v=14';
+import { makeChibi } from './audience.js?v=14';
+import { createPlayer } from './player.js?v=14';
+import { createProgramme } from './programme.js?v=14';
+import { createControls } from './controls.js?v=14';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -86,11 +86,16 @@ programme.setSeats(seats);
 window.addEventListener('click', (e) => {
   if (!programme.booklet.visible || programme.isOpen()) return;
   if (e.target !== canvas) return; // UI buttons always win
-  const v = document.pointerLockElement ? new THREE.Vector2(0, 0)
+  const v = (document.pointerLockElement && !currentSeat) ? new THREE.Vector2(0, 0)
     : new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(v, camera);
   const hit = raycaster.intersectObjects(programme.tapTargets, false);
-  if (hit.length && hit[0].distance < 3) { e.stopImmediatePropagation(); e.preventDefault(); programme.open(); }
+  // Screen-space fallback: tap within ~80px of the booklet's projected centre
+  const bc = new THREE.Vector3(); programme.tapTargets[1].getWorldPosition(bc);
+  const dist = bc.distanceTo(camera.position); bc.project(camera);
+  const sx = (bc.x + 1) / 2 * innerWidth, sy = (1 - bc.y) / 2 * innerHeight;
+  const near = bc.z < 1 && dist < 4 && Math.hypot(sx - e.clientX, sy - e.clientY) < 80;
+  if ((hit.length && hit[0].distance < 4) || near) { e.stopImmediatePropagation(); e.preventDefault(); programme.open(); }
 }, true);
 const pointer = new THREE.Vector2();
 let hoveredSeat = null;
@@ -181,7 +186,7 @@ function standUp() {
   let eye;
   if ((seat.userData.floor || '').startsWith('一楼') && pos.y < 2.5) {
     // Stand right where the seat is (main floor), one step toward the aisle side
-    eye = new THREE.Vector3(pos.x, Math.max(pos.y + 1.6, 1.7), pos.z);
+    eye = new THREE.Vector3(pos.x, 1.7, pos.z);
   } else {
     // Balconies / choir: return to a main-floor aisle spot facing the stage
     eye = new THREE.Vector3(STAGE_FOCUS.x, 1.7, 11);
@@ -266,7 +271,7 @@ enterBtn.addEventListener('click', () => {
   audio.play(); // synchronous in gesture
   entry.classList.add('hidden');
   hud.classList.remove('hidden');
-  if (window.matchMedia('(pointer: coarse)').matches) {
+  if (('ontouchstart' in window) || navigator.maxTouchPoints > 0 || matchMedia('(any-pointer: coarse)').matches) {
     joystick?.classList.remove('hidden');
   }
   started = true;

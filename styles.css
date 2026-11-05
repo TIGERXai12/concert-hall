@@ -92,9 +92,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: #0a0806; f
   position: absolute; left: 34px; top: 34px;
   touch-action: none;
 }
-@media (min-width: 900px) {
-  #joystick { display: none !important; }
-}
+
 #controls { flex-wrap: wrap; justify-content: center; }
 @media (max-width:520px){#controls{gap:8px;width:92vw}#prevBtn,#nextBtn{padding:10px 12px}}
 /* Minimal entry (Sansa-like) */
