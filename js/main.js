@@ -1,11 +1,11 @@
 import * as THREE from 'three';
-import { buildHall, addCurtains } from './hall.js?v=11';
-import { buildOrchestra } from './orchestra.js?v=11';
-import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose } from './seats.js?v=11';
-import { createPresence } from './presence.js?v=11';
-import { createPlayer } from './player.js?v=11';
-import { createProgramme } from './programme.js?v=11';
-import { createControls } from './controls.js?v=11';
+import { buildHall, addCurtains } from './hall.js?v=12';
+import { buildOrchestra } from './orchestra.js?v=12';
+import { buildSeats, setSeatHover, setSeatOccupied, getSeatCameraPose, STAGE_FOCUS } from './seats.js?v=12';
+import { createPresence } from './presence.js?v=12';
+import { createPlayer } from './player.js?v=12';
+import { createProgramme } from './programme.js?v=12';
+import { createControls } from './controls.js?v=12';
 
 const canvas = document.getElementById('c');
 const entry = document.getElementById('entry');
@@ -48,12 +48,17 @@ const controls = createControls(camera, canvas, {
 // ===== 曲目单（由主人决定，观众只听）：按顺序播放，播完循环。改这里即可 =====
 const TRACKS = [
   { title: '拉赫玛尼诺夫《第二钢琴协奏曲》第一乐章', url: 'assets/audio/rachmaninoff-pc2-i.mp3', duration: 300.024 },
+  { title: '圣桑《骷髅之舞》Op.40', url: 'assets/audio/saint-saens-danse-macabre.mp3', duration: 300.042 },
   { title: '肖邦《降E大调夜曲》Op.9 No.2', url: 'assets/audio/chopin-nocturne-op9-2.mp3', duration: 271.517 },
   { title: '柴可夫斯基《第一钢琴协奏曲》第一乐章', url: 'assets/audio/tchaikovsky-pc1-i.mp3', duration: 300.042 },
+  { title: '贝多芬《悲怆奏鸣曲》第一乐章', url: 'assets/audio/beethoven-pathetique-i.mp3', duration: 300.042 },
   { title: '德彪西《月光》', url: 'assets/audio/debussy-clair-de-lune.mp3', duration: 304.118 },
   { title: '贝多芬《第五交响曲·命运》第一乐章', url: 'assets/audio/beethoven-sym5-i.mp3', duration: 300.024 },
+  { title: '肖邦《练习曲》Op.10 No.4', url: 'assets/audio/chopin-etude-op10-4.mp3', duration: 132.598 },
   { title: '肖邦《革命练习曲》Op.10 No.12', url: 'assets/audio/chopin-etude-revolutionary.mp3', duration: 164.833 },
+  { title: '李斯特《安慰曲》第3首', url: 'assets/audio/liszt-consolation-3.mp3', duration: 226.429 },
   { title: '德沃夏克《第九交响曲·自新大陆》第四乐章', url: 'assets/audio/dvorak-sym9-iv.mp3', duration: 300.024 },
+  { title: '巴赫《耶稣，世人仰望的喜悦》BWV 147', url: 'assets/audio/bach-jesu-joy.mp3', duration: 202.292 },
   { title: '李斯特《钟》La Campanella', url: 'assets/audio/liszt-la-campanella.mp3', duration: 372.219 },
 ];
 const audio = createPlayer(TRACKS, {
@@ -77,10 +82,11 @@ programme.setSeats(seats);
 // Tap the booklet → open programme (captures before seat logic)
 window.addEventListener('click', (e) => {
   if (!programme.booklet.visible || programme.isOpen()) return;
+  if (e.target !== canvas) return; // UI buttons always win
   const v = document.pointerLockElement ? new THREE.Vector2(0, 0)
     : new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
   raycaster.setFromCamera(v, camera);
-  const hit = raycaster.intersectObject(programme.booklet, true);
+  const hit = raycaster.intersectObjects(programme.tapTargets, false);
   if (hit.length && hit[0].distance < 3) { e.stopImmediatePropagation(); e.preventDefault(); programme.open(); }
 }, true);
 const pointer = new THREE.Vector2();
@@ -160,24 +166,30 @@ function sitIn(seat) {
 
 function standUp() {
   if (!currentSeat) return;
+  const seat = currentSeat;
   const pos = new THREE.Vector3();
-  currentSeat.getWorldPosition(pos);
-  const floorName = currentSeat.userData.floor || '';
-  const seatYaw = currentSeat.rotation.y;
-  let eyeY = 1.7;
-  if (floorName.startsWith('二楼')) eyeY = Math.max(pos.y + 1.2, 6.5);
-  else if (floorName.startsWith('三楼')) eyeY = Math.max(pos.y + 1.2, 11.2);
-  else eyeY = Math.max(pos.y + 1.25, 1.7);
-  setSeatOccupied(currentSeat, false);
+  seat.getWorldPosition(pos);
+  setSeatOccupied(seat, false);
   programme.placeAtSeat(null);
+  programme.close();
   currentSeat = null;
   controls.setSeated(false);
-  const forward = new THREE.Vector3(Math.sin(seatYaw), 0, Math.cos(seatYaw));
-  camera.position.copy(pos).addScaledVector(forward, 0.9);
-  camera.position.y = eyeY;
+  let eye;
+  if ((seat.userData.floor || '').startsWith('一楼') && pos.y < 2.5) {
+    // Stand right where the seat is (main floor), one step toward the aisle side
+    eye = new THREE.Vector3(pos.x, Math.max(pos.y + 1.6, 1.7), pos.z);
+  } else {
+    // Balconies / choir: return to a main-floor aisle spot facing the stage
+    eye = new THREE.Vector3(STAGE_FOCUS.x, 1.7, 11);
+  }
+  eye.x = THREE.MathUtils.clamp(eye.x, -13.5, 13.5);
+  eye.z = THREE.MathUtils.clamp(eye.z, -9, 19);
+  controls.lookAt(eye, new THREE.Vector3(STAGE_FOCUS.x, 1.7, STAGE_FOCUS.z));
+  camera.position.copy(eye);
   seatLabel.classList.add('hidden');
   standBtn.classList.add('hidden');
   hint.textContent = '走近空座位并点击，即可入座';
+  audio.updateForSeat(eye);
 }
 
 function onPointerMove(e) {
@@ -277,3 +289,18 @@ tick();
 
 // Expose for debugging / screenshot automation
 window.__hall = { programme, scene, camera, renderer, seats, presence, sitIn, standUp, audio, controls };
+
+// ===== Pinch / wheel zoom: adjusts field of view only (35°–85°, smoothed) =====
+let fovTarget = camera.fov;
+const setFov = (f) => { fovTarget = THREE.MathUtils.clamp(f, 35, 85); };
+let pinch0 = 0, fov0 = 0;
+const tdist = (ts) => Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY);
+canvas.addEventListener('touchstart', (e) => { if (e.touches.length === 2) { pinch0 = tdist(e.touches); fov0 = fovTarget; } }, { passive: true });
+canvas.addEventListener('touchmove', (e) => { if (e.touches.length === 2 && pinch0) setFov(fov0 * pinch0 / tdist(e.touches)); }, { passive: true });
+canvas.addEventListener('touchend', (e) => { if (e.touches.length < 2) pinch0 = 0; });
+canvas.addEventListener('wheel', (e) => { e.preventDefault(); setFov(fovTarget + e.deltaY * 0.04); }, { passive: false });
+(function zoomLoop() {
+  if (Math.abs(camera.fov - fovTarget) > 0.05) { camera.fov += (fovTarget - camera.fov) * 0.18; camera.updateProjectionMatrix(); }
+  requestAnimationFrame(zoomLoop);
+})();
+window.__hall.setFov = setFov;

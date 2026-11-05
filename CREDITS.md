@@ -28,3 +28,10 @@
 - Chopin — Étude Op. 10 No. 12 "Revolutionary" — Edward Neeman (piano) — Public domain — https://commons.wikimedia.org/wiki/File:Chopin_-_12_Études,_Op._10_-_No._12_in_C_minor_'Revolutionary'_(Edward_Neeman).flac
 - Liszt — La Campanella — Greiss (piano) — Public domain — https://commons.wikimedia.org/wiki/File:Liszt-La_Campanella-Greiss.ogg
 (Piano pieces are full-length, re-encoded 96k MP3.)
+
+### 韩剧《四手联弹，两首奏鸣曲 / 포핸즈》中出现的曲目（v12 新增）
+- Saint-Saëns — Danse macabre, Op. 40 — Philadelphia Symphony Orchestra, Leopold Stokowski (Victor 6505) — Public domain — https://commons.wikimedia.org/wiki/File:PhiladelphiaSymphonyOrchestra-DanseMacabre.ogg (first 5 min, fade out)
+- Beethoven — Piano Sonata No. 8 "Pathétique", Op. 13, I. Grave – Allegro di molto e con brio — CC0 — https://commons.wikimedia.org/wiki/File:Beethoven,_Sonata_No._8_in_C_Minor_Pathetique,_Op._13_-_I._Grave_-_Allegro_di_molto_e_con_brio.ogg (first 5 min, fade out)
+- Chopin — Étude Op. 10 No. 4 in C♯ minor — Edward Neeman (piano) — Public domain — https://commons.wikimedia.org/wiki/File:Chopin_-_12_Études,_Op._10_-_No._4_in_C-Sharp_minor_'Torrent'_(Edward_Neeman).flac
+- Liszt — Consolation No. 3, Lento placido — Piano: Benedict Kramer; recording: Tobias Lohner — **CC BY-SA 4.0** — https://commons.wikimedia.org/wiki/File:Franz_Liszt_-_Consolation_No._3,_Lento_placido.ogg (re-encoded to MP3; the MP3 is shared under the same CC BY-SA 4.0 license)
+- Bach — Cantata BWV 147, No. 10 "Jesus bleibet meine Freude" — Orchestra Gli Armonici — CC0 — https://commons.wikimedia.org/wiki/File:Bach,_BWV_147,_10._Jesus_bleibet_meine_Freude.ogg

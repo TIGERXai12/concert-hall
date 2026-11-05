@@ -179,6 +179,7 @@ function placeBlock(add, opts) {
       const wz = originZ - localX * sin + localZ * cos;
       seat.position.set(wx, originY + localY, wz);
       seat.rotation.y = Math.atan2(-(STAGE_FOCUS.x - wx), -(STAGE_FOCUS.z - wz)); // each seat fans toward the stage
+      seat.userData.parapet = !!opts.parapet;
       add(seat);
     }
   }

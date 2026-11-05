@@ -27,7 +27,8 @@ export function createProgramme(scene, tracks, livePos) {
   hit.name = 'programmeHit';
   const stand = new THREE.Group();
   const brass = new THREE.MeshStandardMaterial({ color: 0xb8913c, metalness: 0.7, roughness: 0.35 });
-  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.8, 6), brass); rod.position.set(0, -0.48, -0.03);
+  const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.06, 6), brass); rod.position.set(0, -0.13, -0.03);
+  const foot = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.008, 0.08), brass); foot.position.set(0, -0.16, -0.02); stand.add(foot);
   const lip = new THREE.Mesh(new THREE.BoxGeometry(0.17, 0.012, 0.03), brass); lip.position.set(0, -0.108, 0.01);
   stand.add(rod, lip);
   const holder = new THREE.Group(); holder.add(booklet, pocket, hit, stand); holder.visible = false;
@@ -71,12 +72,14 @@ export function createProgramme(scene, tracks, livePos) {
       holder.rotateX(-0.06);
       pocket.visible = true; stand.visible = false;
     } else { // front row: small brass stand just ahead
-      holder.position.set(0.1, 0.9, -0.7).applyMatrix4(seat.matrixWorld);
-      holder.quaternion.copy(q); holder.rotateX(-0.45); stand.visible = true;
+      // Short brass easel resting on the parapet rail cap (top ≈ +0.90 above row-1 floor)
+      const onRail = seat.userData.parapet;
+      holder.position.set(0.1, onRail ? 1.07 : 0.62, -0.66).applyMatrix4(seat.matrixWorld);
+      holder.quaternion.copy(q); holder.rotateX(-0.25); stand.visible = true;
       pocket.visible = false;
     }
     holder.visible = true;
   }
   const isOpen = () => !ov.classList.contains('hidden');
-  return { booklet: holder, open, close, placeAtSeat, isOpen, setSeats: (a) => { allSeats = a; } };
+  return { booklet: holder, tapTargets: [hit, booklet], open, close, placeAtSeat, isOpen, setSeats: (a) => { allSeats = a; } };
 }
